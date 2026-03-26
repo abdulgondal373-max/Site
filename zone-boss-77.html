@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKH TV - ZONE BOSS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        :root { --bg: #0a0a0c; --card: #141417; --accent: #00ff88; --text: #fff; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .container { max-width: 500px; margin: auto; }
+        h2 { text-align: center; color: var(--accent); text-transform: uppercase; font-size: 1.1rem; margin-bottom: 20px; }
+        
+        .form-group { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 25px; }
+        input, select { width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; font-family: 'Poppins'; }
+        
+        /* STYLE DES SOURCES */
+        .source-box { border: 1px solid rgba(0, 255, 136, 0.2); padding: 10px; border-radius: 8px; margin: 10px 0; background: #0a0a0c; }
+        .source-box h4 { margin: 0 0 5px 0; font-size: 0.75rem; color: var(--accent); display: flex; align-items: center; gap: 5px; }
+        .source-box input { margin: 4px 0; padding: 10px; font-size: 0.8rem; }
+
+        button { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; }
+        .btn-add { background: var(--accent); color: #000; margin-top: 10px; }
+        .btn-update { background: #00ccff; color: #000; margin-top: 10px; display: none; }
+        
+        .match-item { background: var(--card); padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; align-items: center; gap: 10px; border-left: 4px solid var(--accent); }
+        .drag-handle { cursor: grab; color: #444; padding: 10px; font-size: 1.2rem; }
+        .match-info { flex: 1; overflow: hidden; }
+        .match-info h4 { margin: 0; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .match-info span { font-size: 0.7rem; color: #666; }
+        .actions { display: flex; gap: 8px; align-items: center; }
+        .btn-icon { background: none; border: none; font-size: 1.1rem; cursor: pointer; }
+        .btn-edit { color: #ffcc00; font-size: 0.7rem; font-weight: 800; border: 1px solid #ffcc00; padding: 4px 8px; border-radius: 4px; background: none; cursor: pointer;}
+        .btn-del { color: #ff4444; font-weight: 800; font-size: 1.2rem; background: none; border: none; cursor: pointer; }
+
+        #comp-manual-container { display: none; margin-top: 5px; }
+        #comp-manual-container input { border-color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Zone Boss - AKH TV</h2>
+
+    <div class="form-group">
+        <input type="hidden" id="edit-id">
+        <input type="text" id="nom" placeholder="Nom du match (ex: France vs Brésil)">
+        
+        <select id="sport" onchange="updateCompList()">
+            <option value="Football">⚽ Football</option>
+            <option value="Formule 1">🏎️ Formule 1</option>
+            <option value="MMA/UFC">🥊 MMA / UFC</option>
+            <option value="WWE">🤼 WWE</option>
+            <option value="Basketball">🏀 Basketball</option>
+            <option value="Tennis">🎾 Tennis</option>
+            <option value="Divers">🏆 Divers</option>
+        </select>
+
+        <select id="competition" onchange="checkManualComp()">
+        </select>
+
+        <div id="comp-manual-container">
+            <input type="text" id="comp-manual" placeholder="Écris le nom du championnat ici...">
+        </div>
+
+        <input type="text" id="image-url" placeholder="Lien de l'image (URL obligatoire)">
+        
+        <div class="source-box">
+            <h4>▶️ Source 1 (Principale)</h4>
+            <input type="text" id="src1-nom" placeholder="Nom du bouton" value="Serveur 1">
+            <input type="text" id="src1-url" placeholder="Lien du flux (.m3u8) ou Cartelive">
+        </div>
+
+        <div class="source-box">
+            <h4>▶️ Source 2 (Externe)</h4>
+            <input type="text" id="src2-nom" placeholder="Nom du bouton" value="Lien Externe">
+            <input type="text" id="src2-url" placeholder="Lien du site qui bloque les iframes">
+        </div>
+
+        <div class="source-box">
+            <h4>▶️ Source 3 (Optionnelle)</h4>
+            <input type="text" id="src3-nom" placeholder="Nom du bouton" value="Secours">
+            <input type="text" id="src3-url" placeholder="Lien de secours">
+        </div>
+        
+        <button class="btn-add" id="addBtn">Ajouter le match</button>
+        <button class="btn-update" id="updateBtn">Mettre à jour le match</button>
+        <button id="cancelBtn" style="display:none; background:transparent; color:#555; margin-top:10px; font-size:0.7rem;">Annuler</button>
+        <div id="status" style="font-size: 0.7rem; text-align: center; margin-top: 10px; color: var(--accent);"></div>
+    </div>
+
+    <div id="admin-list"></div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCznQgA4zvs1dhZQzqtPqjfabsbBhEmvhU", 
+        authDomain: "akhh-3b20d.firebaseapp.com", 
+        projectId: "akhh-3b20d", 
+        storageBucket: "akhh-3b20d.firebasestorage.app", 
+        messagingSenderId: "702428098406", 
+        appId: "1:702428098406:web:6f164b6674c3fe6019e2a7" 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const streamsRef = collection(db, "streams");
+
+    const comps = {
+        "Football": ["Coupe du Monde 🏆", "Ligue 1 🇫🇷", "Ligue 2 🇫🇷", "Champions League ⭐", "Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "La Liga 🇪🇸", "Serie A 🇮🇹", "Bundesliga 🇩🇪", "Europa League 🇪🇺", "MANUEL"],
+        "Formule 1": ["Grand Prix (Course) 🏎️", "Qualifications 🏁", "Essais Libres ⏱️", "MANUEL"],
+        "MMA/UFC": ["UFC 🥊", "PFL 🥊", "ARES 🥊", "Bellator 🥊", "KSW 🥊", "MANUEL"],
+        "WWE": ["WWE RAW 🔴", "WWE SmackDown 🔵", "WWE NXT 🟡", "WrestleMania 👑", "MANUEL"],
+        "Basketball": ["NBA 🏀", "EuroLeague 🏀", "Betclic Elite 🇫🇷", "MANUEL"],
+        "Tennis": ["Roland Garros 🎾", "Wimbledon 🎾", "US Open 🎾", "ATP / WTA 🎾", "MANUEL"],
+        "Divers": ["Direct 📺", "Événement Spécial 🌟", "MANUEL"]
+    };
+
+    window.updateCompList = function(selectedVal = null) {
+        const sport = document.getElementById('sport').value;
+        const compSelect = document.getElementById('competition');
+        compSelect.innerHTML = "";
+        comps[sport].forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.innerText = (c === "MANUEL") ? "✍️ Saisir manuellement..." : c;
+            if(selectedVal === c) opt.selected = true;
+            compSelect.appendChild(opt);
+        });
+        checkManualComp();
+    }
+
+    window.checkManualComp = function() {
+        const val = document.getElementById('competition').value;
+        document.getElementById('comp-manual-container').style.display = (val === "MANUEL") ? "block" : "none";
+    }
+
+    updateCompList();
+
+    const nomInp = document.getElementById('nom');
+    const sportInp = document.getElementById('sport');
+    const compInp = document.getElementById('competition');
+    const compManInp = document.getElementById('comp-manual');
+    const imgUrlInp = document.getElementById('image-url');
+    
+    const src1Nom = document.getElementById('src1-nom');
+    const src1Url = document.getElementById('src1-url');
+    const src2Nom = document.getElementById('src2-nom');
+    const src2Url = document.getElementById('src2-url');
+    const src3Nom = document.getElementById('src3-nom');
+    const src3Url = document.getElementById('src3-url');
+
+    const editIdInp = document.getElementById('edit-id');
+    const addBtn = document.getElementById('addBtn');
+    const updateBtn = document.getElementById('updateBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const statusDiv = document.getElementById('status');
+
+    function getSelectedComp() {
+        return (compInp.value === "MANUEL") ? compManInp.value : compInp.value;
+    }
+
+    function getSources() {
+        let sources = [];
+        if(src1Url.value.trim() !== "") sources.push({ nom: src1Nom.value || "Serveur 1", url: src1Url.value });
+        if(src2Url.value.trim() !== "") sources.push({ nom: src2Nom.value || "Lien Externe", url: src2Url.value });
+        if(src3Url.value.trim() !== "") sources.push({ nom: src3Nom.value || "Secours", url: src3Url.value });
+        return sources;
+    }
+
+    addBtn.addEventListener('click', async () => {
+        const sources = getSources();
+        if(nomInp.value && sources.length > 0) {
+            addBtn.disabled = true;
+            const finalComp = getSelectedComp();
+            const mainUrl = sources[0].url;
+
+            await addDoc(streamsRef, { 
+                nom: nomInp.value, 
+                sport: sportInp.value, 
+                competition: finalComp, 
+                image: imgUrlInp.value, 
+                url: mainUrl, 
+                sources: sources, 
+                priorite: Date.now(), 
+                visible: true
+            });
+            
+            addBtn.disabled = false;
+            resetForm();
+            statusDiv.innerText = "✅ Match ajouté !";
+        } else {
+            alert("Il faut au moins un nom de match et une Source 1 !");
+        }
+    });
+
+    updateBtn.addEventListener('click', async () => {
+        const id = editIdInp.value;
+        const sources = getSources();
+        if(id && sources.length > 0) {
+            updateBtn.disabled = true;
+            const finalComp = getSelectedComp();
+            const mainUrl = sources[0].url;
+
+            await updateDoc(doc(db, "streams", id), { 
+                nom: nomInp.value, 
+                sport: sportInp.value, 
+                competition: finalComp, 
+                image: imgUrlInp.value, 
+                url: mainUrl,
+                sources: sources
+            });
+            
+            updateBtn.disabled = false;
+            resetForm();
+            statusDiv.innerText = "✅ Mise à jour réussie !";
+        }
+    });
+
+    onSnapshot(query(streamsRef, orderBy("priorite", "asc")), (snapshot) => {
+        const adminList = document.getElementById('admin-list');
+        adminList.innerHTML = '';
+        snapshot.forEach((matchDoc) => {
+            const m = matchDoc.data();
+            const id = matchDoc.id;
+            const isVisible = m.visible !== false;
+
+            adminList.innerHTML += `
+                <div class="match-item" data-id="${id}" style="opacity: ${isVisible ? '1' : '0.4'}">
+                    <div class="drag-handle">☰</div>
+                    <div class="match-info">
+                        <h4>${m.nom}</h4>
+                        <span>${m.sport} - ${m.competition}</span>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-icon" onclick="toggleVis('${id}', ${isVisible})">${isVisible ? '👁️' : '🚫'}</button>
+                        <button class="btn-edit" onclick="startEdit('${id}')">MODIF</button>
+                        <button class="btn-del" onclick="deleteMatch('${id}')">×</button>
+                    </div>
+                </div>`;
+        });
+    });
+
+    new Sortable(document.getElementById('admin-list'), { handle: '.drag-handle', animation: 150, onEnd: async function() {
+        const items = document.querySelectorAll('.match-item');
+        items.forEach(async (item, index) => { await updateDoc(doc(db, "streams", item.dataset.id), { priorite: index }); });
+    }});
+
+    window.toggleVis = async (id, status) => { await updateDoc(doc(db, "streams", id), { visible: !status }); };
+    window.deleteMatch = async (id) => { if(confirm("Supprimer ce match ?")) await deleteDoc(doc(db, "streams", id)); };
+    
+    window.startEdit = async (id) => {
+        const s = await getDoc(doc(db, "streams", id));
+        const d = s.data();
+        nomInp.value = d.nom; 
+        sportInp.value = d.sport || "Football";
+        
+        updateCompList();
+        const exists = Array.from(compInp.options).some(opt => opt.value === d.competition);
+        if (exists) {
+            compInp.value = d.competition;
+        } else {
+            compInp.value = "MANUEL";
+            compManInp.value = d.competition;
+        }
+        checkManualComp();
+
+        imgUrlInp.value = d.image; 
+        editIdInp.value = id;
+
+        src1Nom.value = "Serveur 1"; src1Url.value = "";
+        src2Nom.value = "Lien Externe"; src2Url.value = "";
+        src3Nom.value = "Secours"; src3Url.value = "";
+
+        if (d.sources && d.sources.length > 0) {
+            if(d.sources[0]) { src1Nom.value = d.sources[0].nom; src1Url.value = d.sources[0].url; }
+            if(d.sources[1]) { src2Nom.value = d.sources[1].nom; src2Url.value = d.sources[1].url; }
+            if(d.sources[2]) { src3Nom.value = d.sources[2].nom; src3Url.value = d.sources[2].url; }
+        } else if (d.url) {
+            src1Url.value = d.url;
+        }
+        
+        addBtn.style.display = 'none'; 
+        updateBtn.style.display = 'block'; 
+        cancelBtn.style.display = 'block';
+        window.scrollTo(0,0);
+    };
+
+    function resetForm() {
+        nomInp.value = ''; imgUrlInp.value = ''; compManInp.value = ''; editIdInp.value = '';
+        src1Nom.value = 'Serveur 1'; src1Url.value = '';
+        src2Nom.value = 'Lien Externe'; src2Url.value = '';
+        src3Nom.value = 'Secours'; src3Url.value = '';
+        addBtn.style.display = 'block'; updateBtn.style.display = 'none'; cancelBtn.style.display = 'none';
+        statusDiv.innerText = "";
+        updateCompList();
+    }
+    cancelBtn.addEventListener('click', resetForm);
+</script>
+</body>
+</html>

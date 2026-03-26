@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKH TV - Streaming Sportif</title>
+    
+    <meta name="description" content="AKH TV : Le meilleur annuaire de streaming sportif. Retrouvez tous les matchs de Football, la Formule 1, la NBA et l'UFC en direct, sans coupure et gratuitement.">
+    <meta name="keywords" content="streaming, foot en direct, f1, ufc, live, gratuit, regarder match, akh tv">
+
+    <script src="https://pl28907888.effectivegatecpm.com/55/d3/72/55d372e3b596de309b12fad7c5ba3831.js"></script>
+
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --card: #111114;
+            --accent: #00ff88;
+            --text: #ffffff;
+            --gold: #ffd700;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--bg); color: var(--text); 
+            margin: 0; padding-bottom: 40px;
+            display: flex; flex-direction: column; min-height: 100vh;
+        }
+
+        header { 
+            padding: 15px; text-align: center; background: rgba(0,0,0,0.9); 
+            position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+        }
+        header h1 { margin: 0; font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; }
+
+        /* POP-UP INTERSTITIAL STYLE */
+        #interstitial { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); z-index: 9999; 
+            display: none; justify-content: center; align-items: center; 
+        }
+        .interstitial-card { 
+            background: #111; padding: 40px 20px; border-radius: 24px; 
+            border: 1px solid var(--accent); text-align: center; 
+            width: 85%; max-width: 350px; position: relative; 
+        }
+        .close-x { position: absolute; top: 15px; right: 20px; color: #444; font-size: 24px; cursor: pointer; font-weight: bold; }
+
+        /* BARRE SOCIALE */
+        .social-bar { display: flex; justify-content: center; gap: 8px; margin: 20px auto; flex-wrap: wrap; padding: 0 15px; }
+        .social-btn { padding: 8px 16px; border-radius: 50px; text-decoration: none; color: white; font-weight: 600; font-size: 0.7rem; transition: 0.3s; }
+        .bg-telegram { background: #0088cc; }
+        .bg-twitter { background: #1da1f2; }
+        .bg-iptv { background: var(--gold); color: #000; font-weight: 800; }
+
+        .main-content { padding: 0 15px; max-width: 800px; margin: auto; width: 100%; box-sizing: border-box; flex: 1; }
+        #no-match { text-align: center; padding: 100px 20px; color: #444; font-size: 0.85rem; width: 100%; }
+
+        .sport-title { font-size: 0.75rem; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin: 30px 0 15px 0; display: flex; align-items: center; gap: 10px; }
+        .sport-title::after { content: ""; flex: 1; height: 1px; background: rgba(0, 255, 136, 0.1); }
+        .comp-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; color: #eee; }
+
+        .grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; }
+        .card { display: flex; align-items: center; background: var(--card); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.03); transition: 0.2s; }
+        .card-img { width: 85px; height: 60px; border-radius: 8px; object-fit: cover; margin-right: 15px; }
+        .card-info { flex: 1; }
+        .match-name { font-size: 0.85rem; font-weight: 700; margin: 0 0 6px 0; line-height: 1.2; }
+        .btn-regarder { background: linear-gradient(135deg, #00ff88, #00bd65); color: #000; border: none; padding: 6px 18px; border-radius: 6px; font-weight: 800; font-size: 0.65rem; cursor: pointer; text-transform: uppercase; }
+        
+        .live-dot { font-size: 0.5rem; color: #ff4444; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+        .dot { width: 4px; height: 4px; background: #ff4444; border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        footer { padding: 40px 15px; text-align: center; border-top: 1px solid rgba(255,255,255,0.03); margin-top: 50px; }
+        .footer-links a { color: #555; text-decoration: none; font-size: 0.65rem; margin: 0 10px; text-transform: uppercase; }
+
+        @media (min-width: 1024px) {
+            .main-content { max-width: 1200px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="interstitial">
+        <div class="interstitial-card">
+            <span class="close-x" onclick="closeInterstitial()">×</span>
+            <h2 id="interstitial-title" style="margin-top:0">AKH TV</h2>
+            <p id="interstitial-text" style="color:#888; font-size:0.85rem">Chargement...</p>
+            <a href="#" id="interstitial-link" target="_blank" style="display:block; padding:15px; border-radius:12px; text-decoration:none; font-weight:800; color:#000; background:var(--accent); margin-top:20px;">REJOINDRE</a>
+        </div>
+    </div>
+
+    <header><h1>AKH TV</h1></header>
+
+    <div class="social-bar">
+        <a href="https://t.me/+5HpqbYj2l4kzMDQ8" target="_blank" class="social-btn bg-telegram">TELEGRAM</a>
+        <a href="https://x.com/abdul_37300?s=21" target="_blank" class="social-btn bg-twitter">TWITTER</a>
+        <a href="https://discord.gg/yrMxnaTayp" target="_blank" class="social-btn bg-iptv">💎 IPTV 10€</a>
+    </div>
+
+    <div class="main-content" id="streams-container">
+        <div id="no-match">⚽ Analyse des directs en cours...</div>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="dmca.html">DMCA</a>
+            <a href="mentions.html">MENTIONS LÉGALES</a>
+            <a href="https://discord.gg/yrMxnaTayp" target="_blank">CONTACT</a>
+        </div>
+        <p class="copyright">AKH TV &copy; 2026</p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCznQgA4zvs1dhZQzqtPqjfabsbBhEmvhU", 
+            authDomain: "akhh-3b20d.firebaseapp.com", 
+            projectId: "akhh-3b20d", 
+            storageBucket: "akhh-3b20d.firebasestorage.app", 
+            messagingSenderId: "702428098406", 
+            appId: "1:702428098406:web:6f164b6674c3fe6019e2a7" 
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.loadAdAndWatch = (id) => { 
+            window.open(`player.html?id=${id}`, "_blank"); 
+            window.location.href = "https://www.effectivegatecpm.com/p3jkxp2s?key=40703d71a530453869ac052e99f45233"; 
+        };
+
+        const configs = [
+            { 
+                title: "💎 ACCÈS VIP PREMIUM", 
+                text: "L'expérience IPTV ultime : Zéro pub, 4K fluide et stabilité garantie pour seulement 10€ !", 
+                link: "https://discord.gg/yrMxnaTayp", 
+                btnText: "PROFITER DE L'OFFRE 🔥", 
+                color: "#ffd700" 
+            },
+            { 
+                title: "🛡️ GARDE LE CONTACT", 
+                text: "Ne risque pas de perdre l'accès ! Rejoins notre serveur de secours pour rester informé en cas de maintenance.", 
+                link: "https://discord.gg/myCjNzea8U", 
+                btnText: "REJOINDRE LE BACKUP 🚨", 
+                color: "#ff4500" 
+            }
+        ];
+
+        if (!sessionStorage.getItem('popupSeen')) {
+            const selected = configs[Math.floor(Math.random() * configs.length)];
+            document.getElementById('interstitial-title').innerText = selected.title;
+            document.getElementById('interstitial-text').innerText = selected.text;
+            const iLink = document.getElementById('interstitial-link');
+            iLink.href = selected.link;
+            iLink.innerText = selected.btnText;
+            iLink.style.background = selected.color;
+            document.getElementById('interstitial').style.display = 'flex';
+        }
+
+        window.closeInterstitial = function() { 
+            document.getElementById('interstitial').style.display = 'none'; 
+            sessionStorage.setItem('popupSeen', 'true');
+        };
+
+        onSnapshot(query(collection(db, "streams"), orderBy("priorite", "asc")), (snap) => {
+            const cont = document.getElementById('streams-container');
+            cont.innerHTML = '';
+            const groups = {};
+            let matchVisibleTrouve = false;
+
+            snap.forEach(d => {
+                const data = d.data();
+                if(data.visible === false) return;
+                matchVisibleTrouve = true;
+                const s = data.sport || "Autres";
+                const c = data.competition || "Direct";
+                if(!groups[s]) groups[s] = {};
+                if(!groups[s][c]) groups[s][c] = [];
+                groups[s][c].push({id: d.id, ...data});
+            });
+
+            if (!matchVisibleTrouve) {
+                cont.innerHTML = '<div id="no-match">⚽ Aucun match en direct pour le moment.</div>';
+                return;
+            }
+
+            for(const s in groups) {
+                cont.innerHTML += `<div class="sport-title">${s}</div>`;
+                for(const c in groups[s]) {
+                    cont.innerHTML += `<div class="comp-title">${c}</div>`;
+                    let grid = document.createElement('div'); grid.className = 'grid';
+                    
+                    groups[s][c].forEach(m => {
+                        grid.innerHTML += `
+                        <div class="card">
+                            <img src="${m.image}" class="card-img" onerror="this.src='https://via.placeholder.com/85x60/111/444?text=AKH'">
+                            <div class="card-info">
+                                <div class="live-dot"><div class="dot"></div> LIVE</div>
+                                <h3 class="match-name">${m.nom}</h3>
+                                <button onclick="loadAdAndWatch('${m.id}')" class="btn-regarder">Regarder</button>
+                            </div>
+                        </div>`;
+                    });
+                    
+                    cont.appendChild(grid);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
