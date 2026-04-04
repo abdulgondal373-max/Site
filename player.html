@@ -172,6 +172,22 @@
         }
 
         initPlayer();
+        // --- NOUVEAU : SYSTÈME DE PING POUR LE COMPTEUR EN DIRECT ---
+        const WORKER_URL = "https://wandering-bread-f5d2.abdul-gondal373.workers.dev/";
+        
+        function sendPing() {
+            if (matchId) {
+                // Envoie un signal silencieux au serveur Cloudflare
+                fetch(`${WORKER_URL}?id=${matchId}&ping=true`).catch(() => {});
+            }
+        }
+
+        // On envoie le premier signal dès que la page s'ouvre
+        sendPing();
+        
+        // Puis on continue d'envoyer le signal toutes les 15 secondes pour dire "Je regarde toujours"
+        setInterval(sendPing, 15000);
+
     </script>
 </body>
 </html>
