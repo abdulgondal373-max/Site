@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AKH TV - Lecteur VIP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --card: #111114;
+      --accent: #00ff88;
+      --border: rgba(0, 255, 136, 0.15);
+      --text: #ffffff;
+      --muted: rgba(255,255,255,.5);
+    }
+    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html, body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── HEADER ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.9); position: sticky; top: 0; z-index: 50;
+    }
+    .logo h1 { margin: 0; font-size: 1rem; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
+    
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px;
+      border-radius: 8px; border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.06); font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: 0.2s;
+    }
+    .btn-back:hover { background: rgba(0, 255, 136, 0.1); border-color: var(--accent); color: var(--accent); }
+
+    /* ── LAYOUT 3 COLONNES ── */
+    .shell {
+      display: flex; 
+      flex-direction: row;
+      height: calc(100vh - 60px); 
+      max-width: 1920px; 
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* ── COL GAUCHE (Serveurs) ── */
+    .col-left {
+      width: 260px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border); 
+      background: var(--card);
+      padding: 20px 15px; 
+      display: flex; flex-direction: column; gap: 15px; 
+      overflow-y: auto; height: 100%;
+    }
+    .sb-live { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #ff4444; }
+    .sb-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff4444; animation: sbPulse 1s infinite; }
+    @keyframes sbPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .sb-label { font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; }
+    .sb-player-btns { display: flex; flex-direction: column; gap: 8px; }
+    
+    .sb-pbtn {
+      padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.1);
+      background: #1a1a1f; color: #fff; font-size: 11px; font-weight: 800;
+      cursor: pointer; transition: 0.2s; text-transform: uppercase;
+    }
+    .sb-pbtn:hover { background: #222; }
+    .sb-pbtn.active { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 10px rgba(0,255,136,0.3); }
+
+    /* ── CENTRE (Lecteur & Boutons) ── */
+    .col-center { 
+      flex: 1; 
+      min-width: 0; 
+      display: flex; flex-direction: column; 
+      background: var(--bg); 
+      overflow-y: auto; height: 100%;
+    }
+    
+    /* LE LECTEUR DE BASE (POUR MOBILE ET PC) */
+    .live-player-wrap { 
+      position: relative; 
+      width: 100%; 
+      aspect-ratio: 16 / 9; 
+      background: #000; 
+      border-bottom: 1px solid var(--border); 
+      flex-shrink: 0;
+      overflow: hidden; 
+    }
+    #video-player { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; 
+    }
+    #iframe-player { 
+      position: absolute; top: 0; left: 0; 
+      width: 100%; height: 100%; 
+      border: none; display: none; 
+      /* Aucun zoom ici, le mobile reste naturel ! */
+    }
+
+    /* LE HACK FCTV : ACTIVÉ UNIQUEMENT SUR PC ! */
+    @media (min-width: 1101px) {
+      #iframe-player {
+        transform: scale(1.12);
+        transform-origin: center 5%; 
+      }
+    }
+
+    /* ── FOOTER ALIGNÉ ── */
+    .player-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background: #000;
+      gap: 15px;
+    }
+    .match-inline { font-size: 16px; font-weight: 800; margin: 0; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    
+    .stream-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px;
+      font-size: 11px; font-weight: 800; color: #fff; cursor: pointer; text-transform: uppercase;
+      border: 1px solid rgba(255,255,255,0.1); transition: 0.2s;
+    }
+    .stream-btn:hover { transform: translateY(-2px); }
+    .stream-btn svg { width: 14px; height: 14px; fill: currentColor; }
+    
+    .btn-x-sm { background: #070707; }
+    .btn-telegram-sm { background: #289cd8; }
+    .btn-discord-sm { background: #5865f2; }
+    
+    .btn-iptv {
+      background: #12bb57; color: #fff; font-size: 12px; padding: 8px 16px;
+      border-color: #12bb57; box-shadow: 0 4px 15px rgba(18, 187, 87, 0.3);
+    }
+
+    .viewer-mini { display: none; }
+
+    /* ── COL DROITE (Chat) ── */
+    .col-right { 
+      width: 320px;
+      flex-shrink: 0;
+      border-left: 1px solid var(--border); 
+      background: #000; 
+      height: 100%; 
+      position: relative; 
+    }
+    #chat-container-box { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+    /* ── MOBILE LAYOUT (Remis à zéro comme avant) ── */
+    @media (max-width: 1100px) {
+      .shell { flex-direction: column; height: auto; overflow: visible; }
+      .col-left { width: 100%; order: 2; border-right: none; border-top: 1px solid var(--border); height: auto; }
+      .col-center { width: 100%; order: 1; overflow-y: visible; height: auto; }
+      
+      .col-right { 
+        width: 100%;
+        order: 3; border-left: none; border-top: 1px solid var(--border); 
+        height: 550px; display: block;
+      }
+      
+      .player-footer { flex-direction: column; align-items: flex-start; padding: 15px; }
+      .btn-group { justify-content: flex-start; margin-top: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <a href="index.html" class="logo"><h1>AKH TV</h1></a>
+    <button onclick="window.location.href='index.html'" class="btn-back">⬅ Retour</button>
+  </header>
+
+  <div class="shell">
+
+    <aside class="col-left">
+      <div class="sb-live"><span class="sb-dot"></span> EN DIRECT</div>
+      <div class="sb-lecteur">
+        <div class="sb-label">Changer de Serveur :</div>
+        <div class="sb-player-btns" id="server-buttons-container"></div>
+      </div>
+    </aside>
+
+    <main class="col-center">
+      <div class="live-player-wrap">
+        <video id="video-player" controls autoplay playsinline></video>
+        <iframe id="iframe-player" allowfullscreen scrolling="no" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"></iframe>
+      </div>
+
+      <div class="player-footer">
+        <div class="match-inline" id="matchFooter">Chargement...</div>
+        
+        <div class="btn-group">
+          <a href="https://x.com/akhy_abdul?s=21" target="_blank" class="stream-btn btn-x-sm">
+            <svg viewBox="0 0 24 24"><path d="M18.244 2H21l-6.52 7.455L22.5 22h-6.91l-5.41-7.046L4.18 22H1.42l7.01-8.02L1.5 2h7.09l4.89 6.34L18.244 2Zm-1.21 18h1.53L7.76 3.89H6.12L17.03 20Z"/></svg>
+            Twitter / X
+          </a>
+          <a href="https://t.me/+5HpqbYj2l4kzMDQ8" target="_blank" class="stream-btn btn-telegram-sm">TELEGRAM</a>
+          <a href="https://discord.com/invite/9hDDERzTJe" target="_blank" class="stream-btn btn-discord-sm">DISCORD</a>
+          <a href="https://discord.gg/CGG5m2ddj2" target="_blank" class="stream-btn btn-iptv">📺 CHOPPE TON IPTV DÈS 10€</a>
+        </div>
+      </div>
+    </main>
+
+    <aside class="col-right">
+      <div id="chat-container-box">
+        <script id="chatango-script" data-cfasync="false" async src="//st.chatango.com/js/gz/emb.js" style="width: 100%;height: 100%;">
+          {"handle":"akhtvvv","arch":"js","styles":{"a":"000000","b":100,"c":"FFFFFF","d":"FFFFFF","k":"000000","l":"000000","m":"000000","n":"FFFFFF","p":"10","q":"000000","r":100}}
+        </script>
+      </div>
+    </aside>
+
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getDatabase, ref, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCznQgA4zvs1dhZQzqtPqjfabsbBhEmvhU", 
+        authDomain: "akhh-3b20d.firebaseapp.com", 
+        databaseURL: "https://akhh-3b20d-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "akhh-3b20d", 
+        storageBucket: "akhh-3b20d.firebasestorage.app", 
+        messagingSenderId: "702428098406", 
+        appId: "1:702428098406:web:6f164b6674c3fe6019e2a7" 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const rtdb = getDatabase(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const matchId = urlParams.get('id');
+    
+    const video = document.getElementById('video-player');
+    const iframe = document.getElementById('iframe-player');
+    let hls;
+
+    if (!matchId) {
+        document.getElementById('matchFooter').innerText = "Retour à l'accueil...";
+    } else {
+        const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+        const viewerRef = ref(rtdb, `viewers/${matchId}/${userId}`);
+        
+        set(viewerRef, true);
+        onDisconnect(viewerRef).remove();
+
+        getDoc(doc(db, "streams", matchId)).then((docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                
+                let titre = data.nom;
+                if (titre.toLowerCase().includes(" vs ")) {
+                    titre = titre.replace(/ vs /i, ' <span style="background:#ff6b00; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; vertical-align:middle; margin:0 5px;">VS</span> ');
+                }
+                document.getElementById('matchFooter').innerHTML = titre;
+
+                const serversContainer = document.getElementById('server-buttons-container');
+                let sourcesList = [];
+
+                if (data.sources && data.sources.length > 0) {
+                    sourcesList = data.sources;
+                } else if (data.url) {
+                    sourcesList = [{ nom: "Serveur 1", url: data.url }];
+                }
+
+                if(sourcesList.length > 0) {
+                    sourcesList.forEach((src, index) => {
+                        const btn = document.createElement('button');
+                        btn.className = `sb-pbtn ${index === 0 ? 'active' : ''}`;
+                        btn.innerText = src.nom;
+                        btn.onclick = () => {
+                            document.querySelectorAll('.sb-pbtn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            loadStream(src.url);
+                        };
+                        serversContainer.appendChild(btn);
+                    });
+                    loadStream(sourcesList[0].url);
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    }
+
+    function loadStream(url) {
+        if (!url) return;
+        
+        if (hls) hls.destroy();
+
+        if (url.includes('.m3u8')) {
+            iframe.style.display = 'none';
+            video.style.display = 'block';
+
+            if (Hls.isSupported()) {
+                hls = new Hls({ capLevelToPlayerSize: true, maxBufferLength: 30, maxMaxBufferLength: 60 });
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() { video.play().catch(e => console.log("Autoplay bloqué")); });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.addEventListener('loadedmetadata', function() { video.play().catch(e => console.log("Autoplay bloqué")); });
+            }
+        } else {
+            video.style.display = 'none';
+            video.pause();
+            iframe.style.display = 'block';
+            iframe.src = url;
+        }
+    }
+  </script>
+</body>
+</html>
