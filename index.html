@@ -13,18 +13,18 @@
         header h1 { margin: 0; font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; }
         .global-counter { position: absolute; right: 15px; font-size: 0.65rem; color: #ff4444; font-weight: 800; background: rgba(255, 68, 68, 0.15); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255, 68, 68, 0.25); display: flex; align-items: center; gap: 4px; }
 
-        /* POPUP D'ENTRÉE (INTERSTITIAL) */
+        /* 1. POPUP D'ENTRÉE (50/50) */
         #interstitial { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: none; justify-content: center; align-items: center; }
         .interstitial-card { background: #111; padding: 40px 20px; border-radius: 24px; border: 1px solid var(--accent); text-align: center; width: 85%; max-width: 350px; position: relative; }
         .close-x { position: absolute; top: 15px; right: 20px; color: #444; font-size: 24px; cursor: pointer; font-weight: bold; }
 
-        /* MODAL SOUTIEN (AVANT LE MATCH) */
+        /* 2. MODAL SOUTIEN ADSTERRA (Identique à ta capture) */
         #support-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 10000; justify-content: center; align-items: center; }
-        .support-card { background: #141417; padding: 30px 20px; border-radius: 16px; border: 2px solid var(--accent); text-align: center; max-width: 380px; width: 90%; box-shadow: 0 0 30px rgba(0,255,136,0.2); }
-        .support-card h2 { color: var(--accent); margin-top: 0; text-transform: uppercase; font-size: 1.2rem; }
-        .support-btn { display: block; padding: 12px; border-radius: 8px; font-weight: 800; text-decoration: none; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85rem; }
-        .btn-go-match { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; width: 100%; margin-top: 15px; font-size: 0.9rem; transition: 0.2s; }
-        .btn-go-match:hover { transform: scale(1.05); }
+        .support-card { background: #141417; padding: 30px 20px; border-radius: 16px; border: 2px solid #4488ee; text-align: center; max-width: 380px; width: 90%; box-shadow: 0 0 30px rgba(68, 136, 238, 0.15); }
+        .support-card h2 { color: #fff; margin-top: 0; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; }
+        .support-card p { color: #aaa; font-size: 0.85rem; line-height: 1.5; margin-bottom: 25px; }
+        .btn-go-match { display: block; background: #4488ee; color: #fff; border: none; padding: 14px; border-radius: 8px; font-weight: 800; cursor: pointer; width: 100%; font-size: 0.85rem; transition: 0.2s; text-decoration: none; box-shadow: 0 4px 15px rgba(68, 136, 238, 0.3); text-transform: uppercase; }
+        .btn-go-match:hover { transform: scale(1.02); }
 
         .social-bar { display: flex; justify-content: center; gap: 8px; margin: 20px auto; flex-wrap: wrap; padding: 0 15px; }
         .social-btn { padding: 6px 12px; border-radius: 50px; text-decoration: none; color: white; font-weight: 800; font-size: 0.6rem; text-align: center; text-transform: uppercase; }
@@ -62,26 +62,24 @@
 </head>
 <body>
 
-    <!-- 1. POPUPS D'ENTRÉE SÉQUENTIELS -->
+    <!-- 1. POPUP D'ENTRÉE (50/50 ALÉATOIRE) -->
     <div id="interstitial">
         <div class="interstitial-card">
-            <span class="close-x" onclick="nextPopup()">×</span>
+            <span class="close-x" onclick="closeInterstitial()">×</span>
             <h2 id="int-title" style="margin-top:0">AKH TV</h2>
             <p id="int-text" style="color:#888; font-size:0.85rem">Chargement...</p>
-            <a href="#" id="int-link" target="_blank" style="display:block; padding:15px; border-radius:12px; text-decoration:none; font-weight:800; color:#000; background:var(--accent); margin-top:20px;" onclick="nextPopup()">REJOINDRE</a>
+            <a href="#" id="int-link" target="_blank" style="display:block; padding:15px; border-radius:12px; text-decoration:none; font-weight:800; color:#000; background:var(--accent); margin-top:20px;" onclick="closeInterstitial()">REJOINDRE</a>
         </div>
     </div>
 
-    <!-- 2. MODAL SOUTIEN DE LA CHAÎNE (S'ouvre au clic sur Regarder) -->
+    <!-- 2. MODAL SOUTIEN ADSTERRA -->
     <div id="support-modal">
         <div class="support-card">
-            <h2>🙏 Soutenez AKH TV</h2>
-            <p style="color:#aaa; font-size:0.8rem; margin-bottom:20px;">Pour que le site reste 100% gratuit et sans coupure, prenez 2 secondes pour rejoindre notre Telegram ou découvrir notre IPTV !</p>
+            <h2>❤️ SOUTENEZ AKH TV</h2>
+            <p>Notre accès est 100% gratuit ! Soutenez nous en cliquant sur Soutenir et Lancer le match. ( Ta juste à aller dans les onglets et revenir ici).</p>
             
-            <a href="https://t.me/+5HpqbYj2l4kzMDQ8" target="_blank" class="support-btn" style="background:#289cd8; color:#fff;">📱 Rejoindre Telegram</a>
-            <a href="https://discord.gg/CGG5m2ddj2" target="_blank" class="support-btn" style="background:#ffd700; color:#000;">📺 Découvrir l'IPTV (10€)</a>
-            
-            <button class="btn-go-match" onclick="goToMatch()">▶ LANCER LE MATCH</button>
+            <!-- CE LIEN OUVRE ADSTERRA DANS UN NOUVEL ONGLET, ET REDIRIGE L'ONGLET ACTUEL VERS LE MATCH -->
+            <a href="https://alarmpenguinmelt.com/p3jkxp2s?key=40703d71a530453869ac052e99f45233" target="_blank" class="btn-go-match" onclick="redirectMatch(event)">SOUTENIR & LANCER LE MATCH</a>
         </div>
     </div>
 
@@ -123,45 +121,45 @@
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
 
-        // --- GESTION DES 2 POPUPS D'ENTRÉE ---
-        const popups = [
+        // --- GESTION DU POPUP D'ENTRÉE (50/50) ---
+        const configs = [
             { title: "💎 ACCÈS VIP PREMIUM", text: "L'expérience IPTV ultime : Zéro pub, 4K fluide et stabilité garantie pour 10€ !", link: "https://discord.gg/CGG5m2ddj2", btnText: "PROFITER DE L'OFFRE 🔥", color: "#ffd700" },
-            { title: "🛡️ GARDE LE CONTACT", text: "Ne risque pas de perdre l'accès ! Rejoins notre serveur de secours.", link: "https://discord.gg/xM7CJsvKgd", btnText: "REJOINDRE LE BACKUP 🚨", color: "#ff4500" }
+            { title: "🛡️ GARDE LE CONTACT", text: "Ne risque pas de perdre l'accès ! Rejoins notre serveur de secours pour rester informé en cas de maintenance.", link: "https://discord.gg/xM7CJsvKgd", btnText: "REJOINDRE LE BACKUP 🚨", color: "#ff4500" }
         ];
-        let currentPopup = 0;
 
-        function showPopup() {
-            if (sessionStorage.getItem('entryPopupsSeen')) return;
-            if (currentPopup < popups.length) {
-                const p = popups[currentPopup];
-                document.getElementById('int-title').innerText = p.title;
-                document.getElementById('int-text').innerText = p.text;
-                const iLink = document.getElementById('int-link');
-                iLink.href = p.link; iLink.innerText = p.btnText; iLink.style.background = p.color;
-                document.getElementById('interstitial').style.display = 'flex';
-            } else {
-                document.getElementById('interstitial').style.display = 'none';
-                sessionStorage.setItem('entryPopupsSeen', 'true');
-            }
+        if (!sessionStorage.getItem('popupSeen')) {
+            const selected = configs[Math.floor(Math.random() * configs.length)];
+            document.getElementById('int-title').innerText = selected.title;
+            document.getElementById('int-text').innerText = selected.text;
+            const iLink = document.getElementById('int-link');
+            iLink.href = selected.link; iLink.innerText = selected.btnText; iLink.style.background = selected.color;
+            document.getElementById('interstitial').style.display = 'flex';
         }
-        window.nextPopup = function() {
-            currentPopup++;
-            showPopup();
-        };
-        // Lancer les popups au chargement
-        showPopup();
 
-        // --- GESTION DU CLIC "REGARDER" (SOUTIEN) ---
+        window.closeInterstitial = function() { 
+            document.getElementById('interstitial').style.display = 'none'; 
+            sessionStorage.setItem('popupSeen', 'true');
+        };
+
+
+        // --- GESTION DU CLIC "REGARDER" ET REDIRECTION ADSTERRA ---
         let targetMatchId = null;
+        
         window.openSupportModal = function(id) {
             targetMatchId = id;
             document.getElementById('support-modal').style.display = 'flex';
         };
-        window.goToMatch = function() {
-            if(targetMatchId) {
-                window.location.href = 'player.html?id=' + targetMatchId;
-            }
+
+        window.redirectMatch = function(e) {
+            // Pas de e.preventDefault() -> On laisse le navigateur ouvrir le lien Adsterra dans un nouvel onglet (_blank)
+            // Ensuite, on attend 200 millisecondes et on redirige l'onglet actuel vers le match
+            setTimeout(() => {
+                if(targetMatchId) {
+                    window.location.href = 'player.html?id=' + targetMatchId;
+                }
+            }, 200);
         };
+
 
         // --- COMPTEUR GLOBAL ---
         onValue(ref(rtdb, 'viewers'), (snapshot) => {
@@ -215,7 +213,6 @@
                             liveMatchIds.push(m.id);
                             statusHtml = `<div class="live-dot" id="status-${m.id}"><div class="dot"></div> LIVE</div>`;
                             badgeHtml = `<div class="viewers-badge" id="badge-${m.id}"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg><span id="count-${m.id}">0</span></div>`;
-                            // ICI ON CHANGE LE BOUTON POUR OUVRIR LE MODAL AU LIEU DE REDIRIGER DIRECTEMENT
                             buttonHtml = `<button id="btn-${m.id}" onclick="openSupportModal('${m.id}')" class="btn-regarder">REGARDER</button>`;
                         } else {
                             if (isCountdown) { statusHtml = `<div class="waiting-dot match-timer" id="status-${m.id}" data-time="${m.heureDebut}" data-id="${m.id}" data-live="false">⏳ CALCUL...</div>`; } 
@@ -268,7 +265,6 @@
                     const btn = document.getElementById('btn-' + id);
                     if(btn) {
                         btn.className = "btn-regarder"; btn.innerText = "REGARDER"; btn.disabled = false;
-                        // On attache aussi le modal de soutien ici quand le timer se termine !
                         btn.onclick = () => openSupportModal(id);
                     }
                     const card = document.getElementById('card-' + id);
