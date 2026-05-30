@@ -1,0 +1,5 @@
+# Redirection masquée (Proxy) pour tes flux
+# Remplace l'URL par celle de ton fournisseur si tu veux un lien fixe
+/stream-direct  https://ton-serveur-iptv.com/live/user/pass/id.m3u8  200
+
+# Redirection pour tes pages

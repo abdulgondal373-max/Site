@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKH TV - Boutique IPTV</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --bg: #050706; 
+            --card: #0d1210; 
+            --accent: #00ff88; 
+            --glow: rgba(0, 255, 136, 0.3);
+            --text: #ffffff; 
+            --gray: #a0aab2; 
+        }
+        
+        body { 
+            font-family: 'Poppins', sans-serif; /* Police normale pour tout le site */
+            background-color: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 15px; 
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        /* ── CADRE PRINCIPAL ── */
+        .main-wrapper {
+            width: 100%;
+            max-width: 850px;
+            margin: 0 auto;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 20px;
+            padding: 25px;
+            background: linear-gradient(145deg, #0d1210 0%, #050706 100%);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 30px;
+        }
+
+        .logo h1 { margin: 0; font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 900; letter-spacing: 2px; }
+        .logo h1 span { color: var(--accent); text-shadow: 0 0 10px var(--glow); }
+        
+        .btn-close { color: var(--gray); text-decoration: none; font-size: 0.75rem; font-weight: 700; border: 1px solid #333; padding: 8px 15px; border-radius: 50px; text-transform: uppercase; }
+
+        /* ── SECTION INFOS (L'ENTRE-DEUX) ── */
+        .hero { text-align: center; margin-bottom: 30px; }
+        .hero h2 { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; text-transform: uppercase; margin-bottom: 10px; }
+        .hero h2 span { color: var(--accent); }
+
+        .features-box { 
+            background: rgba(255,255,255,0.02); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 15px; 
+            padding: 20px; 
+            margin-bottom: 35px; 
+        }
+        .feat-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 600px) { .feat-list { grid-template-columns: 1fr 1fr; } }
+        
+        .feat-list li { font-size: 0.9rem; color: #eee; display: flex; align-items: center; gap: 10px; }
+        .feat-list li span { color: var(--accent); font-weight: bold; }
+
+        /* ── SECTION TARIFS (LISTE HORIZONTALE) ── */
+        .section-title { font-family: 'Orbitron'; font-size: 1rem; color: var(--accent); text-align: center; margin-bottom: 20px; letter-spacing: 2px; }
+        
+        .pricing-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 35px; }
+        
+        .price-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: var(--card); 
+            padding: 18px 25px; 
+            border-radius: 15px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .price-row:hover { border-color: var(--accent); transform: translateX(5px); box-shadow: 0 0 15px rgba(0, 255, 136, 0.1); }
+        
+        .p-left .duration { font-size: 1rem; font-weight: 700; color: #fff; display: block; }
+        .p-left .old-price { font-size: 0.8rem; color: #555; text-decoration: line-through; font-weight: 600; }
+
+        .p-right { text-align: right; }
+        .p-right .current-price { font-size: 1.8rem; font-weight: 800; color: var(--accent); display: block; line-height: 1; }
+        .p-right .action-txt { font-size: 0.6rem; color: #fff; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px; text-transform: uppercase; margin-top: 5px; display: inline-block; }
+
+        /* MISE EN AVANT 12 MOIS */
+        .best-offer { border: 1px solid var(--accent); background: linear-gradient(90deg, rgba(0,255,136,0.05) 0%, var(--card) 100%); position: relative; }
+        .best-tag { position: absolute; top: -10px; left: 20px; background: var(--accent); color: #000; font-size: 0.6rem; font-weight: 800; padding: 2px 10px; border-radius: 4px; text-transform: uppercase; }
+
+        /* ── ÉTAPES ── */
+        .steps-wrapper { background: rgba(0, 255, 136, 0.02); border: 1px solid rgba(0, 255, 136, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 30px; }
+        .steps-wrapper h3 { font-family: 'Orbitron'; font-size: 0.85rem; text-align: center; margin-top: 0; color: #fff; margin-bottom: 20px; }
+        
+        .step-item { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
+        .step-num { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); flex-shrink: 0; font-size: 0.9rem; }
+        .step-txt { font-size: 0.85rem; color: #ccc; }
+        .step-txt b { color: #fff; }
+
+        /* ── BOUTON DISCORD ── */
+        .btn-discord { display: flex; align-items: center; justify-content: center; gap: 10px; background: #5865f2; color: #fff; text-decoration: none; padding: 16px; border-radius: 15px; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; transition: 0.3s; box-shadow: 0 10px 20px rgba(88, 101, 242, 0.2); }
+        .btn-discord:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(88, 101, 242, 0.4); }
+
+        .support-footer { text-align: center; font-size: 0.65rem; color: #444; margin-top: 25px; text-transform: uppercase; letter-spacing: 1px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        
+        <header>
+            <div class="logo"><h1>AKH <span>TV</span></h1></div>
+            <a href="index.html" class="btn-close">Retour</a>
+        </header>
+
+        <div class="hero">
+            <h2>IPTV <span>PREMIUM</span></h2>
+        </div>
+
+        <div class="features-box">
+            <ul class="feat-list">
+                <li><span>✓</span> 15 000+ Chaînes (Sport inclus)</li>
+                <li><span>✓</span> VOD 4K (100 000+ Films & Séries)</li>
+                <li><span>✓</span> Qualité ultra-stable en pointe</li>
+                <li><span>✓</span> Mises à jour de contenus mensuelles</li>
+                <li><span>✓</span> Disponible sur tous vos appareils</li>
+                <li><span>✓</span> Assistance premium 24/7</li>
+            </ul>
+        </div>
+
+        <div class="section-title">TARIFS PROMO LDC 🏆</div>
+
+        <div class="pricing-container">
+            
+            <a href="https://discord.gg/CGG5m2ddj2" target="_blank" class="price-row">
+                <div class="p-left">
+                    <span class="duration">1 MOIS</span>
+                    <span class="old-price">10 €</span>
+                </div>
+                <div class="p-right">
+                    <span class="current-price">7 €</span>
+                    <span class="action-txt">Prendre</span>
+                </div>
+            </a>
+
+            <a href="https://discord.gg/CGG5m2ddj2" target="_blank" class="price-row">
+                <div class="p-left">
+                    <span class="duration">3 MOIS</span>
+                    <span class="old-price">20 €</span>
+                </div>
+                <div class="p-right">
+                    <span class="current-price">15 €</span>
+                    <span class="action-txt">Prendre</span>
+                </div>
+            </a>
+
+            <a href="https://discord.gg/CGG5m2ddj2" target="_blank" class="price-row">
+                <div class="p-left">
+                    <span class="duration">6 MOIS</span>
+                    <span class="old-price">35 €</span>
+                </div>
+                <div class="p-right">
+                    <span class="current-price">25 €</span>
+                    <span class="action-txt">Prendre</span>
+                </div>
+            </a>
+
+            <a href="https://discord.gg/CGG5m2ddj2" target="_blank" class="price-row best-offer">
+                <div class="best-tag">MEILLEUR PRIX 🏆</div>
+                <div class="p-left">
+                    <span class="duration">12 MOIS</span>
+                    <span class="old-price">50 €</span>
+                </div>
+                <div class="p-right">
+                    <span class="current-price">40 €</span>
+                    <span class="action-txt">Prendre</span>
+                </div>
+            </a>
+
+        </div>
+
+        <div class="steps-wrapper">
+            <h3>COMMENT COMMANDER ?</h3>
+            <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-txt"><b>Choisis ton offre</b> parmi celles ci-dessus.</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-txt"><b>Ouvre un Ticket</b> sur notre serveur Discord.</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-txt"><b>Activation express</b> par l'équipe AKH après paiement.</div>
+            </div>
+        </div>
+
+        <a href="https://discord.gg/CGG5m2ddj2" target="_blank" class="btn-discord">
+            🛒 ACCÉDER AU DISCORD SHOP
+        </a>
+
+        <div class="support-footer">SUPPORT TECHNIQUE RÉACTIF 24/7</div>
+
+    </div>
+<script>
+    // 1. Bloquer le clic droit
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    // 2. Bloquer les touches de raccourcis (F12, Ctrl+Maj+I, Ctrl+U, etc.)
+    document.onkeydown = function(e) {
+        // Bloquer F12
+        if (e.keyCode == 123) {
+            return false;
+        }
+        // Bloquer Ctrl+Maj+I (Inspecter)
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
+            return false;
+        }
+        // Bloquer Ctrl+Maj+J (Console)
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) {
+            return false;
+        }
+        // Bloquer Ctrl+U (Afficher le code source)
+        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
+            return false;
+        }
+        // Bloquer Ctrl+Maj+C (Inspecter élément)
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) {
+            return false;
+        }
+    };
+</script>
+
+<style>
+    /* 3. Empêcher la sélection de texte (pour pas copier tes textes) */
+    body {
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10+ */
+        user-select: none; /* Standard syntax */
+    }
+</style>
+
+</body>
+</html>
