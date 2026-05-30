@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AKH TV - Lecteur VIP</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --card: #111114;
+      --accent: #00ff88;
+      --border: rgba(0, 255, 136, 0.15);
+      --text: #ffffff;
+      --gray: #888;
+    }
+    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html, body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── HEADER PREMIUM ORBITRON ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 70px; padding: 0 25px; border-bottom: 2px solid var(--accent);
+      background: rgba(0,0,0,0.9); position: sticky; top: 0; z-index: 50;
+      box-shadow: 0 5px 25px rgba(0, 255, 136, 0.15);
+    }
+    .logo h1 { 
+      margin: 0; 
+      font-family: 'Orbitron', sans-serif; 
+      font-size: 1.6rem; 
+      font-weight: 900; 
+      letter-spacing: 4px; 
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+    }
+    .logo h1 span { color: var(--accent); }
+    
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px;
+      border-radius: 50px; border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.06); font-family: 'Orbitron', sans-serif; 
+      font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: 0.3s; color: #fff;
+      text-transform: uppercase;
+    }
+    .btn-back:hover { background: rgba(0, 255, 136, 0.1); border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    /* ── LAYOUT ── */
+    .shell {
+      display: flex; flex-direction: row; height: calc(100vh - 70px); 
+      max-width: 1920px; margin: 0 auto; overflow: hidden;
+    }
+
+    /* ── COLONNE GAUCHE (SERVEURS & TCHAT) ── */
+    .col-left {
+      width: 320px; flex-shrink: 0; border-right: 1px solid var(--border); 
+      background: var(--card); padding: 20px 15px; 
+      display: flex; flex-direction: column; gap: 15px; 
+      overflow-y: auto; height: 100%;
+    }
+    .sb-live { 
+      display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem; font-weight: 700; color: #ff4444; letter-spacing: 1px;
+    }
+    .sb-dot { width: 10px; height: 10px; border-radius: 50%; background: #ff4444; animation: sbPulse 1s infinite; box-shadow: 0 0 10px red; }
+    @keyframes sbPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .sb-label { font-size: 0.75rem; font-weight: 600; color: var(--gray); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;}
+    .sb-player-btns { display: flex; flex-direction: column; gap: 10px; }
+    
+    .sb-pbtn {
+      padding: 12px; border-radius: 50px; border: 1px solid rgba(255,255,255,.1);
+      background: #1a1a1f; color: #fff; font-family: 'Orbitron', sans-serif; 
+      font-size: 0.7rem; font-weight: 700; cursor: pointer; transition: 0.3s; text-transform: uppercase;
+    }
+    .sb-pbtn:hover { background: #2a2a2f; border-color: rgba(0, 255, 136, 0.4); }
+    .sb-pbtn.active { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 5px 15px rgba(0,255,136,0.3); transform: scale(1.02); }
+
+    /* ── TCHAT MAISON ── */
+    .chat-wrapper {
+      flex: 1; display: flex; flex-direction: column; margin-top: 10px;
+      border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 16px;
+      overflow: hidden; background: #050505;
+    }
+    .chat-header {
+      background: rgba(0, 255, 136, 0.1); padding: 12px; text-align: center; 
+      font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 700; 
+      color: #00ff88; text-transform: uppercase; border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+    }
+    #chat-messages {
+      flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;
+    }
+    #chat-messages::-webkit-scrollbar { width: 6px; }
+    #chat-messages::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    .chat-msg-box { background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 12px; font-size: 0.8rem; line-height: 1.4; word-break: break-word; border: 1px solid rgba(255,255,255,0.02); }
+    .chat-author { color: var(--accent); font-weight: 800; margin-right: 5px; }
+    .chat-text { color: #eee; }
+    
+    .chat-input-area { padding: 15px; background: #111; border-top: 1px solid rgba(0, 255, 136, 0.2); display: flex; flex-direction: column; gap: 8px; }
+    .chat-input-row { display: flex; gap: 8px; }
+    .chat-input { padding: 12px; border-radius: 20px; border: 1px solid #333; background: #1a1a1f; color: #fff; font-size: 0.8rem; outline: none; transition: 0.3s; }
+    .chat-input:focus { background: #222; border-color: var(--accent); }
+    
+    #btn-send-chat { background: var(--accent); color: #000; border: none; border-radius: 50px; padding: 0 20px; cursor: pointer; font-weight: 900; transition: 0.3s; font-size: 1.2rem; }
+    #btn-send-chat:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(0,255,136,0.4); }
+
+    /* ── CENTRE (LECTEUR) ── */
+    .col-center { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--bg); overflow-y: auto; height: 100%; }
+    
+    .live-player-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-bottom: 1px solid var(--border); flex-shrink: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+    
+    #video-player, #iframe-player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #000; }
+    #iframe-player { display: none; }
+    
+    /* 🟢 BOUTON PLEIN ECRAN MAISON AKH TV */
+    .akh-fullscreen-btn {
+        position: absolute; 
+        bottom: 20px; 
+        right: 20px;
+        background: rgba(0, 0, 0, 0.85); 
+        color: #fff;
+        border: 2px solid var(--accent); 
+        padding: 10px 18px;
+        border-radius: 50px;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700; 
+        font-size: 0.75rem;
+        cursor: pointer; 
+        z-index: 999; 
+        display: none; 
+        text-transform: uppercase;
+        box-shadow: 0 5px 15px rgba(0,255,136,0.3);
+        transition: 0.3s;
+    }
+    .akh-fullscreen-btn:hover { background: var(--accent); color: #000; transform: scale(1.05); }
+
+    .live-player-wrap.force-fullscreen {
+        position: fixed !important; top: 0 !important; left: 0 !important;
+        width: 100vw !important; height: 100vh !important;
+        max-width: 100% !important; margin: 0 !important;
+        z-index: 999999 !important; background: #000 !important;
+        overflow: hidden !important; 
+    }
+    .live-player-wrap.force-fullscreen #iframe-player {
+        top: -65px !important; 
+        height: calc(100% + 65px) !important; 
+        width: 100% !important;
+    }
+
+    /* ── FOOTER DU LECTEUR ── */
+    .mystake-banner { text-align: center; padding: 15px; background: #050505; border-bottom: 1px solid var(--border); }
+    .mystake-btn { background: linear-gradient(90deg, #00b09b, #96c93d); color: #ffffff !important; padding: 12px 25px; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; border-radius: 50px; display: inline-block; box-shadow: 0 4px 15px rgba(0, 176, 155, 0.4); text-decoration: none; transition: 0.3s; }
+    .mystake-btn:hover { transform: scale(1.02); }
+
+    .player-footer { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; background: #0a0a0c; gap: 15px; }
+    .match-inline { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 700; margin: 0; color: #fff; text-transform: uppercase; }
+    
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    .stream-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 50px; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; color: #fff; cursor: pointer; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
+    .stream-btn:hover { transform: translateY(-2px); }
+    .btn-x-sm { background: #070707; }
+    .btn-telegram-sm { background: #289cd8; }
+    .btn-discord-sm { background: #5865f2; }
+    .btn-iptv { background: #12bb57; color: #fff; border-color: #12bb57; box-shadow: 0 4px 15px rgba(18, 187, 87, 0.3); }
+
+    /* ── MOBILE LAYOUT ── */
+    @media screen and (max-width: 1100px) {
+      .shell { display: flex !important; flex-direction: column !important; height: auto !important; overflow: hidden !important; width: 100vw !important; }
+      .col-center { width: 100% !important; order: 1 !important; flex: none !important; height: auto !important; overflow: visible !important; }
+      .col-left { width: 100% !important; order: 2 !important; flex: none !important; border-right: none !important; border-top: 2px solid var(--accent) !important; height: auto !important; padding-bottom: 40px !important; }
+      .player-footer { flex-direction: column; align-items: flex-start; padding: 15px; width: 100%; box-sizing: border-box; }
+      .btn-group { justify-content: flex-start; margin-top: 10px; width: 100%; }
+      .mystake-banner { padding: 10px; width: 100%; box-sizing: border-box; }
+      .mystake-btn { font-size: 0.75rem; padding: 12px 10px; width: 100%; box-sizing: border-box; display: block; } 
+      .chat-wrapper { height: 450px !important; flex: none !important; width: 100%; }
+    }
+
+    /* --- PANEL ADMIN SECRET --- */
+    #admin-panel {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; padding: 20px;
+    }
+    .admin-content {
+      background: #111114; border: 1px solid var(--accent); border-radius: 12px;
+      width: 100%; max-width: 500px; padding: 20px; display: flex; flex-direction: column; gap: 15px;
+      box-shadow: 0 0 30px rgba(0,255,136,0.2); max-height: 80vh;
+    }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+    .admin-header h2 { color: var(--accent); font-family: 'Orbitron'; font-size: 1.2rem; margin: 0; text-transform: uppercase; }
+    .close-admin { background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    #banned-list-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    #banned-list-content::-webkit-scrollbar { width: 4px; }
+    #banned-list-content::-webkit-scrollbar-thumb { background: #333; }
+    .banned-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; }
+    .banned-info strong { color: #fff; }
+    .banned-info span { display: block; font-size: 10px; color: #ff4444; margin-top: 2px; }
+    .unban-btn { background: #12bb57; color: #fff; border: none; padding: 6px 12px; border-radius: 50px; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+
+  <div id="admin-panel">
+    <div class="admin-content">
+      <div class="admin-header">
+        <h2>🛡️ Panel de Modération</h2>
+        <button class="close-admin" onclick="window.closeAdminPanel()">×</button>
+      </div>
+      <div id="banned-list-content"></div>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <a href="../index.html" class="logo"><h1>AKH <span>TV</span></h1></a>
+    <button onclick="window.location.href='../index.html'" class="btn-back">⬅ Retour</button>
+  </header>
+
+  <div class="shell">
+
+    <aside class="col-left">
+      <div class="sb-live"><span class="sb-dot"></span> EN DIRECT <span id="viewers-count" style="margin-left: 5px; color: #fff; font-weight: 600;">(0)</span></div>
+      
+      <div class="sb-lecteur">
+        <div class="sb-label">Changer de Serveur :</div>
+        <div class="sb-player-btns" id="server-buttons-container"></div>
+      </div>
+
+      <div class="chat-wrapper">
+        <div class="chat-header">💬 Tchat en direct</div>
+        <div id="chat-messages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-pseudo" class="chat-input" placeholder="Ton pseudo" maxlength="15">
+            <div class="chat-input-row">
+                <input type="text" id="chat-input" class="chat-input" style="flex:1;" placeholder="Écris ton message...">
+                <button id="btn-send-chat">></button>
+            </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="col-center">
+      <div class="live-player-wrap" id="player-wrapper">
+        <video id="video-player" controls autoplay playsinline muted></video>
+        <iframe id="iframe-player" allow="fullscreen; autoplay; picture-in-picture; encrypted-media" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" scrolling="no"></iframe>
+        
+        <button id="akh-fs-btn" class="akh-fullscreen-btn" onclick="window.toggleAKHFullscreen()">🔲 Plein Écran</button>
+      </div>
+
+      <div class="mystake-banner">
+          <a href="https://go.affiliatemystake.com/visit/?bta=3169353&nci=5353" target="_blank" class="mystake-btn">
+              ⚽️ MYSTAKE : DOUBLE TON PREMIER DÉPÔT JUSQU'À 500€ POUR PARIER ! 💸
+          </a>
+      </div>
+
+      <div class="player-footer">
+        <div class="match-inline" id="matchFooter">Chargement...</div>
+        <div class="btn-group">
+          <a href="https://x.com/akhy_abdul?s=21" target="_blank" class="stream-btn btn-x-sm">Twitter / X</a>
+          <a href="https://t.me/+5HpqbYj2l4kzMDQ8" target="_blank" class="stream-btn btn-telegram-sm">TELEGRAM</a>
+          <a href="https://discord.com/invite/9hDDERzTJe" target="_blank" class="stream-btn btn-discord-sm">DISCORD</a>
+          <a href="../iptv.html" class="stream-btn btn-iptv">📺 OFFRE IPTV 10€</a>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <script type="module">
+    if (sessionStorage.getItem('pass_pub') !== 'valide') { window.location.href = '../index.html'; }
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getDatabase, ref, set, onDisconnect, push, query, limitToLast, onChildAdded, onChildRemoved, serverTimestamp, remove, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCznQgA4zvs1dhZQzqtPqjfabsbBhEmvhU", 
+        authDomain: "akhh-3b20d.firebaseapp.com", 
+        databaseURL: "https://akhh-3b20d-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "akhh-3b20d", 
+        storageBucket: "akhh-3b20d.firebasestorage.app", 
+        messagingSenderId: "702428098406", 
+        appId: "1:702428098406:web:6f164b6674c3fe6019e2a7" 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const rtdb = getDatabase(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const matchId = urlParams.get('id');
+    
+    const video = document.getElementById('video-player');
+    const iframe = document.getElementById('iframe-player');
+    let hls;
+
+    window.toggleAKHFullscreen = function() {
+        const wrapper = document.getElementById('player-wrapper');
+        const btn = document.getElementById('akh-fs-btn');
+        wrapper.classList.toggle('force-fullscreen');
+        
+        if (wrapper.classList.contains('force-fullscreen')) {
+            btn.innerHTML = "❌ Quitter";
+        } else {
+            btn.innerHTML = "🔲 Plein Écran";
+        }
+    };
+
+    if (matchId) {
+        let myChatUid = localStorage.getItem('akh_chat_uid');
+        if (!myChatUid) {
+            myChatUid = 'uid_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('akh_chat_uid', myChatUid);
+        }
+
+        const isBoss = localStorage.getItem('akh_is_boss') === 'true';
+        let userMap = {}; 
+
+        const viewerRef = ref(rtdb, `viewers/${matchId}/${myChatUid}`);
+        set(viewerRef, true);
+        onDisconnect(viewerRef).remove();
+        
+        onValue(ref(rtdb, `viewers/${matchId}`), (snapshot) => {
+            let count = 0;
+            if (snapshot.exists()) {
+                count = Object.keys(snapshot.val()).length;
+            }
+            const compteurBox = document.getElementById('viewers-count');
+            if (compteurBox) compteurBox.innerText = `(${count})`;
+        });
+
+        const chatInput = document.getElementById('chat-input');
+        const chatPseudo = document.getElementById('chat-pseudo');
+        const btnSend = document.getElementById('btn-send-chat');
+
+        let amIBanned = false;
+        let isChatDisabled = false;
+        let banReason = "";
+
+        const updateChatState = () => {
+            if (isBoss) {
+                chatInput.disabled = false;
+                btnSend.disabled = false;
+                chatPseudo.style.display = 'block';
+                chatInput.placeholder = "Écris ton message (👑 Boss)...";
+                return;
+            }
+            if (amIBanned) {
+                chatInput.disabled = true;
+                btnSend.disabled = true;
+                chatPseudo.style.display = 'none';
+                chatInput.placeholder = `🚫 Banni : ${banReason}`;
+                return;
+            }
+            if (isChatDisabled) {
+                chatInput.disabled = true;
+                btnSend.disabled = true;
+                chatInput.placeholder = "🔒 Tchat mis en pause par le Boss.";
+                return;
+            }
+            
+            chatInput.disabled = false;
+            btnSend.disabled = false;
+            chatPseudo.style.display = 'block';
+            chatInput.placeholder = "Écris ton message...";
+        };
+
+        const bannedRef = ref(rtdb, `banned/${matchId}/${myChatUid}`);
+        onValue(bannedRef, (snapshot) => {
+            if (snapshot.exists()) {
+                amIBanned = true;
+                banReason = snapshot.val().reason || "Comportement inacceptable";
+            } else {
+                amIBanned = false;
+            }
+            updateChatState();
+        });
+
+        const chatSettingsRef = ref(rtdb, `chatSettings/${matchId}/isDisabled`);
+        onValue(chatSettingsRef, (snapshot) => {
+            isChatDisabled = snapshot.exists() ? snapshot.val() : false;
+            updateChatState();
+        });
+
+        const adminPanel = document.getElementById('admin-panel');
+        const bannedListContent = document.getElementById('banned-list-content');
+
+        window.openAdminPanel = () => {
+            adminPanel.style.display = 'flex';
+            onValue(ref(rtdb, `banned/${matchId}`), (snapshot) => {
+                bannedListContent.innerHTML = '';
+                if (!snapshot.exists()) {
+                    bannedListContent.innerHTML = '<p style="color:#aaa; text-align:center; margin-top:20px;">Aucun viewer banni pour ce match.</p>';
+                    return;
+                }
+                snapshot.forEach((childSnap) => {
+                    const targetUid = childSnap.key;
+                    const data = childSnap.val();
+                    const div = document.createElement('div');
+                    div.className = 'banned-item';
+                    div.innerHTML = `
+                        <div class="banned-info">
+                            <strong>${data.pseudo || "Viewer Anonyme"}</strong>
+                            <span>Motif: ${data.reason || "Non précisé"}</span>
+                        </div>
+                        <button class="unban-btn" onclick="window.unbanUser('${targetUid}')">DÉBANNIR</button>
+                    `;
+                    bannedListContent.appendChild(div);
+                });
+            });
+        };
+
+        window.closeAdminPanel = () => { adminPanel.style.display = 'none'; };
+
+        window.unbanUser = (targetUid) => {
+            if(confirm("Libérer ce viewer et l'autoriser à reparler ?")) {
+                remove(ref(rtdb, `banned/${matchId}/${targetUid}`));
+            }
+        };
+
+        const chatMessages = document.getElementById('chat-messages');
+        if(localStorage.getItem('akh_pseudo')) chatPseudo.value = localStorage.getItem('akh_pseudo');
+
+        let lastMsgTime = 0;
+        const chatRef = ref(rtdb, `tchat_prive/${matchId}`);
+        const recentChats = query(chatRef, limitToLast(5));
+
+        onChildAdded(recentChats, (snapshot) => {
+            const data = snapshot.val();
+            const msgKey = snapshot.key;
+            
+            if (data.pseudo && data.uid) { userMap[data.pseudo.toLowerCase()] = data.uid; }
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = "chat-msg-box";
+            msgDiv.id = "msg-" + msgKey;
+            
+            const safePseudo = data.pseudo.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeText = data.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const crownHtml = data.isAdmin ? "👑 " : "";
+
+            msgDiv.innerHTML = `<span class="chat-author">${crownHtml}${safePseudo}</span> <span class="chat-text">${safeText}</span>`;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        onChildRemoved(recentChats, (snapshot) => {
+            const mDiv = document.getElementById("msg-" + snapshot.key);
+            if(mDiv) mDiv.remove();
+        });
+
+        const sendMessage = async () => {
+            if (amIBanned || (isChatDisabled && !isBoss)) return;
+
+            const text = chatInput.value.trim();
+            
+            const linkRegex = /(http:\/\/|https:\/\/|www\.|[a-zA-Z0-9-]+\.(com|fr|net|org|html|tv|me|info|xyz|online|app|site))/i;
+            if (!isBoss && linkRegex.test(text)) {
+                alert("❌ Les liens et les pubs sont interdits dans le tchat !");
+                return;
+            }
+
+            let pseudo = chatPseudo.value.trim() || "Viewer_" + Math.floor(Math.random()*1000);
+            
+            if (!isBoss) {
+                pseudo = pseudo.replace(/👑/g, '').trim();
+                const normalizedPseudo = pseudo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                const strictPseudo = normalizedPseudo.replace(/[^a-z0-9]/g, '');
+                const wordsOnly = normalizedPseudo.replace(/[^a-z0-9]/g, ' ');
+                const isAkhWord = /\bakh\b/.test(wordsOnly);
+
+                if (isAkhWord || strictPseudo === 'akh' || strictPseudo === 'akhtv') {
+                    alert("❌ Le pseudo 'AKH' est strictement réservé à l'administrateur ! Change de blase boss.");
+                    return;
+                }
+
+                if (pseudo === "") pseudo = "Viewer_" + Math.floor(Math.random()*1000);
+            }
+
+            if (!text) return;
+
+            if (text === "/admin akhtv.abdul373") {
+                localStorage.setItem('akh_is_boss', 'true');
+                alert("👑 MODE BOSS ACTIVÉ ! La page va se recharger.");
+                location.reload();
+                return;
+            }
+            if (text === "/logout") {
+                localStorage.removeItem('akh_is_boss');
+                alert("Mode Boss désactivé.");
+                location.reload();
+                return;
+            }
+
+            if (text === "/disable") {
+                if (!isBoss) { alert("❌ Tu n'as pas les droits."); chatInput.value = ''; return; }
+                set(ref(rtdb, `chatSettings/${matchId}/isDisabled`), true);
+                push(chatRef, { uid: "system", pseudo: "👑 SYSTÈME", text: "🔒 LE TCHAT A ÉTÉ FERMÉ PAR L'ADMIN.", isAdmin: true, timestamp: serverTimestamp() });
+                chatInput.value = '';
+                return;
+            }
+            if (text === "/enable") {
+                if (!isBoss) { alert("❌ Tu n'as pas les droits."); chatInput.value = ''; return; }
+                set(ref(rtdb, `chatSettings/${matchId}/isDisabled`), false);
+                push(chatRef, { uid: "system", pseudo: "👑 SYSTÈME", text: "🔓 LE TCHAT EST DE NOUVEAU OUVERT !", isAdmin: true, timestamp: serverTimestamp() });
+                chatInput.value = '';
+                return;
+            }
+
+            if (text === "/clear") {
+                if (!isBoss) { alert("❌ Tu n'as pas les droits."); chatInput.value = ''; return; }
+                remove(ref(rtdb, `tchat_prive/${matchId}`));
+                push(chatRef, { uid: "system", pseudo: "👑 SYSTÈME", text: "🧹 LE TCHAT A ÉTÉ NETTOYÉ PAR L'ADMIN.", isAdmin: true, timestamp: serverTimestamp() });
+                chatInput.value = '';
+                return;
+            }
+
+            if (text.startsWith("/ban ")) {
+                if (!isBoss) {
+                    alert("❌ Tu n'as pas les droits pour faire ça.");
+                    chatInput.value = '';
+                    return;
+                }
+                const parts = text.split(' ');
+                if (parts.length < 2) return; 
+                
+                const targetPseudo = parts[1].toLowerCase();
+                const reason = parts.slice(2).join(' ') || "Aucune raison précisée";
+                const targetUid = userMap[targetPseudo]; 
+                
+                if (targetUid) {
+                    set(ref(rtdb, `banned/${matchId}/${targetUid}`), { pseudo: parts[1], reason: reason });
+                    alert(`🔨 BOUM ! ${parts[1]} est banni du tchat.\nRaison : ${reason}`);
+                } else {
+                    alert(`❌ Impossible de trouver "${parts[1]}" dans le tchat actuel. Vérifie l'orthographe exacte.`);
+                }
+                chatInput.value = ''; 
+                return;
+            }
+
+            if (text === "/panel") {
+                if (!isBoss) {
+                    alert("❌ Tu n'as pas les droits pour ouvrir le panel.");
+                    chatInput.value = '';
+                    return;
+                }
+                window.openAdminPanel();
+                chatInput.value = '';
+                return;
+            }
+
+            const pseudoLower = pseudo.toLowerCase();
+            const pseudoRef = ref(rtdb, `pseudos/${matchId}/${pseudoLower}`);
+            
+            try {
+                const snapshot = await get(pseudoRef);
+                
+                if (snapshot.exists() && snapshot.val() !== myChatUid && !isBoss) {
+                    alert(`❌ Le pseudo "${pseudo}" est déjà utilisé par quelqu'un d'autre ! Change de blase boss.`);
+                    return; 
+                }
+                
+                await set(pseudoRef, myChatUid);
+                onDisconnect(pseudoRef).remove();
+                
+            } catch (error) {
+                console.error("Erreur de vérification du pseudo :", error);
+            }
+
+            const now = Date.now();
+            if (!isBoss && now - lastMsgTime < 30000) {
+                const timeLeft = Math.ceil((30000 - (now - lastMsgTime)) / 1000);
+                alert(`⏳ Doucement boss ! Attends encore ${timeLeft} seconde(s) avant ton prochain message.`);
+                return;
+            }
+
+            localStorage.setItem('akh_pseudo', pseudo);
+            
+            push(chatRef, { 
+                uid: myChatUid,
+                pseudo: pseudo, 
+                text: text, 
+                isAdmin: isBoss, 
+                timestamp: serverTimestamp() 
+            });
+
+            const matchName = document.getElementById('matchFooter').innerText || "Match en cours";
+            const webhookURL = "https://discord.com/api/webhooks/1503762029461241936/aIYu19bJ9DxJVC5PUkD5fpSI-UT6Wm5GidbHyC2GmniFTmfah2htS_8vX4gAKmfoMRIz"; 
+            
+            const discordPseudo = isBoss ? `👑 ${pseudo}` : pseudo;
+            const messageDiscord = `📺 **${matchName}**\n👤 **${discordPseudo}** : ${text}\n-------------------`;
+            
+            fetch(webhookURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: messageDiscord })
+            }).catch(err => console.log("Erreur Webhook:", err));
+            
+            chatInput.value = ''; 
+            lastMsgTime = now;
+        };
+
+        btnSend.onclick = sendMessage;
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+        const matchRef = doc(db, "streams", matchId);
+        onSnapshot(matchRef, (docSnap) => {
+            if (!docSnap.exists()) {
+                alert("Fin du match ou flux fermé. Retour à l'accueil !");
+                window.location.href = '../index.html';
+                return;
+            }
+
+            if (!document.getElementById('server-buttons-container').innerHTML) {
+                const data = docSnap.data();
+                document.getElementById('matchFooter').innerText = data.nom;
+
+                const serversContainer = document.getElementById('server-buttons-container');
+                let sourcesList = data.sources || (data.url ? [{ nom: "Serveur 1", url: data.url }] : []);
+
+                let firstValidStream = null;
+
+                sourcesList.forEach((src, index) => {
+                    const btn = document.createElement('button');
+                    const isExternal = src.nom.toLowerCase().includes('lien externe');
+                    
+                    btn.className = `sb-pbtn`;
+                    btn.innerText = src.nom;
+                    
+                    btn.onclick = () => {
+                        // 🔓 DECRYPTAGE SECRET AU CLIC DU BOUTON
+                        let vraiUrl = src.url;
+                        try { vraiUrl = atob(src.url); } catch(e) { }
+
+                        if (isExternal) {
+                            const fantomeBtn = document.createElement('a');
+                            fantomeBtn.href = vraiUrl;
+                            fantomeBtn.target = '_blank';
+                            fantomeBtn.rel = 'noreferrer';
+                            fantomeBtn.click();
+                        } else {
+                            document.querySelectorAll('.sb-pbtn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            loadStream(src.url); // On passe l'URL encryptée, loadStream gèrera
+                        }
+                    };
+                    serversContainer.appendChild(btn);
+
+                    if (!isExternal && !firstValidStream) {
+                        firstValidStream = src;
+                        btn.classList.add('active'); 
+                    }
+                });
+
+                if (firstValidStream) {
+                    loadStream(firstValidStream.url);
+                }
+            }
+        });
+    }
+
+    // 🟢 FONCTION DE CHARGEMENT DE STREAM QUI DECRYPTE
+    function loadStream(urlCrypte) {
+        if (!urlCrypte) return;
+
+        // 🔓 DÉCRYPTAGE SECRET FINAL POUR LE PLAYER
+        let vraiLien = urlCrypte;
+        try { vraiLien = atob(urlCrypte); } catch(e) { /* Laisse le lien tel quel si pas crypté */ }
+
+        if (hls) hls.destroy();
+
+        const fsBtn = document.getElementById('akh-fs-btn');
+        const wrapper = document.getElementById('player-wrapper');
+        
+        if (vraiLien.includes('livewatch')) {
+            fsBtn.style.display = 'block';
+        } else {
+            fsBtn.style.display = 'none';
+            wrapper.classList.remove('force-fullscreen');
+            fsBtn.innerHTML = "🔲 Plein Écran";
+        }
+
+        if (vraiLien.includes('.m3u8')) {
+            iframe.style.display = 'none';
+            video.style.display = 'block';
+            fsBtn.style.display = 'none'; 
+
+            if (Hls.isSupported()) {
+                hls = new Hls({ capLevelToPlayerSize: true, maxBufferLength: 30, maxMaxBufferLength: 60 });
+                hls.loadSource(vraiLien); // Utilise le VRAI lien décrypté
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() { video.play().catch(e => console.log("Autoplay bloqué")); });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = vraiLien; // Utilise le VRAI lien décrypté
+                video.addEventListener('loadedmetadata', function() { video.play().catch(e => console.log("Autoplay bloqué")); });
+            }
+        } else {
+            video.style.display = 'none';
+            video.pause();
+            iframe.style.display = 'block';
+            iframe.src = vraiLien; // Utilise le VRAI lien décrypté
+        }
+    }
+  </script>
+<script>
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123) { return false; }
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; }
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; }
+        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; }
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { return false; }
+    };
+</script>
+<style>
+    body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
+</style>
+</body>
+</html>
