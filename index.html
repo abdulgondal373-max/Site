@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AKH TV - Streaming Sportif</title>
     
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://akhh-3b20d-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
 
@@ -187,7 +191,7 @@
 
     <div class="social-bar">
         <a href="https://discord.com/invite/9hDDERzTJe" target="_blank" class="social-btn">DISCORD</a>
-        <a href="https://t.me/+5HpqbYj2l4kzMDQ8" target="_blank" class="social-btn">TELEGRAM</a>
+        <a href="https://t.me/+ZwJc5nqhevYyMzM0" target="_blank" class="social-btn">TELEGRAM</a>
         <a href="iptv.html" class="social-btn bg-iptv">📺 OFFRE IPTV</a>
 
     </div>
@@ -255,7 +259,7 @@
             adModal.style.display = 'flex';
             
             adBtn.onclick = function() {
-                const lienAdsterra = 'https://alarmpenguinmelt.com/p3jkxp2s?key=40703d71a530453869ac052e99f45233';
+                const lienAdsterra = 'https://alarmpenguinmelt.com/a6ejx46brv?key=44988478d22bea19cf3e0433beca9e52';
                 window.open(lienAdsterra, '_blank');
                 sessionStorage.setItem('pass_pub', 'valide');
                 adModal.style.display = 'none';
@@ -410,12 +414,15 @@
                 const diff = matchTime - now;
                 
                 if (diff > 0) {
-                    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const s = Math.floor((diff % (1000 * 60)) / 1000);
+                    const totalSeconds = Math.floor(diff / 1000);
+                    const d = Math.floor(totalSeconds / 86400);
+                    const h = Math.floor((totalSeconds % 86400) / 3600);
+                    const m = Math.floor((totalSeconds % 3600) / 60);
+                    const s = totalSeconds % 60;
                     
                     const format = (num) => num < 10 ? '0' + num : num;
-                    el.innerHTML = `⏳ ${format(h)}H ${format(m)}M ${format(s)}S`;
+                    const dayPart = d > 0 ? `${d}J ` : '';
+                    el.innerHTML = `⏳ ${dayPart}${format(h)}H ${format(m)}M ${format(s)}S`;
                 } else {
                     el.dataset.live = "true";
                     el.className = "live-dot";
@@ -440,43 +447,18 @@
 
     </script>
 <script>
-    // 1. Bloquer le clic droit
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-    });
-
-    // 2. Bloquer les touches de raccourcis (F12, Ctrl+Maj+I, Ctrl+U, etc.)
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     document.onkeydown = function(e) {
-        // Bloquer F12
-        if (e.keyCode == 123) {
-            return false;
-        }
-        // Bloquer Ctrl+Maj+I (Inspecter)
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
-            return false;
-        }
-        // Bloquer Ctrl+Maj+J (Console)
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) {
-            return false;
-        }
-        // Bloquer Ctrl+U (Afficher le code source)
-        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
-            return false;
-        }
-        // Bloquer Ctrl+Maj+C (Inspecter élément)
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) {
-            return false;
-        }
+        if (e.keyCode == 123) return false;
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
     };
 </script>
 
 <style>
-    /* 3. Empêcher la sélection de texte (pour pas copier tes textes) */
-    body {
-        -webkit-user-select: none; /* Safari */
-        -ms-user-select: none; /* IE 10+ */
-        user-select: none; /* Standard syntax */
-    }
+    body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
 </style>
 
 </body>
