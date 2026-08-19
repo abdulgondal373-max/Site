@@ -12,6 +12,13 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+  // Force les iPhones à ignorer Hls.js et à utiliser leur lecteur natif parfait
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      Hls.isSupported = function() { return false; };
+  }
+</script>
+
 
   <style>
     :root {
