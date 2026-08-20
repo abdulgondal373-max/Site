@@ -25,21 +25,24 @@
         .btn-update { background: #00ccff; color: #000; margin-top: 10px; display: none; }
         .btn-logout { background: transparent; color: #ff4444; border: 1px solid #ff4444; margin-bottom: 15px; padding: 10px; }
         
-        .match-item { background: var(--card); padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; align-items: center; gap: 8px; border-left: 4px solid var(--accent); }
-        .drag-handle { cursor: grab; color: #444; padding: 2px; font-size: 1.1rem; flex-shrink: 0; }
-        .match-info { flex: 1; min-width: 0; }
+        .match-item { background: var(--card); padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; align-items: center; gap: 10px; border-left: 4px solid var(--accent); cursor: grab; transition: background 0.2s;}
+        .match-item.sortable-ghost { opacity: 0.5; background: #222; } /* Style quand on glisse le bloc */
+        
+        .drag-handle { color: #555; font-size: 1.5rem; flex-shrink: 0; padding-right: 5px;}
+        .match-info { flex: 1; min-width: 0; pointer-events: none; }
         .match-info h4 { margin: 0; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .match-info span { font-size: 0.7rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-        .actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
         
-        .order-buttons { display: flex; flex-direction: column; gap: 2px; }
-        .btn-order { background: #222; color: #aaa; border: none; font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; cursor: pointer; }
-        .btn-order:hover { background: var(--accent); color: #000; }
-
+        .actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
         .btn-icon { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 0; }
-        .btn-force { background: none; border: 1px solid #ffcc00; color: #ffcc00; font-size: 0.8rem; padding: 3px 6px; border-radius: 4px; cursor: pointer; }
-        .btn-force.forced { background: #ffcc00; color: #000; }
-        .btn-edit { color: #ffcc00; font-size: 0.7rem; font-weight: 800; border: 1px solid #ffcc00; padding: 4px 8px; border-radius: 4px; background: none; cursor: pointer;}
+        
+        .btn-test { background: #222; border: 1px solid #00ccff; color: #00ccff; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-test:hover { background: #00ccff; color: #000; }
+        
+        .btn-force { background: none; border: 1px solid #ffcc00; color: #ffcc00; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .btn-force.forced { background: #ffcc00; color: #000; font-weight: bold; }
+        
+        .btn-edit { color: #fff; font-size: 0.7rem; font-weight: 800; border: 1px solid #666; padding: 4px 8px; border-radius: 4px; background: #333; cursor: pointer;}
         .btn-del { color: #ff4444; font-weight: 800; font-size: 1.2rem; background: none; border: none; cursor: pointer; padding: 0; }
 
         #comp-manual-container { display: none; margin-top: 5px; }
@@ -82,11 +85,7 @@
             </select>
 
             <select id="competition" onchange="checkManualComp()"></select>
-
-            <div id="comp-manual-container">
-                <input type="text" id="comp-manual" placeholder="Écris le nom du championnat ici...">
-            </div>
-
+            <div id="comp-manual-container"><input type="text" id="comp-manual" placeholder="Écris le nom du championnat ici..."></div>
             <input type="text" id="image-url" placeholder="Lien de l'image (URL obligatoire)">
             
             <div class="source-box">
@@ -138,26 +137,16 @@
 
     const loginScreen = document.getElementById('login-screen');
     const adminScreen = document.getElementById('admin-screen');
-    const loginError = document.getElementById('login-error');
-
+    
     onAuthStateChanged(auth, (user) => {
-        if (user) {
-            loginScreen.style.display = 'none';
-            adminScreen.style.display = 'block';
-            chargerListeMatchs(); 
-        } else {
-            loginScreen.style.display = 'block';
-            adminScreen.style.display = 'none';
-        }
+        if (user) { loginScreen.style.display = 'none'; adminScreen.style.display = 'block'; chargerListeMatchs(); } 
+        else { loginScreen.style.display = 'block'; adminScreen.style.display = 'none'; }
     });
 
     document.getElementById('btnLogin').addEventListener('click', () => {
-        const email = document.getElementById('login-email').value;
-        const pass = document.getElementById('login-pass').value;
-        
         setPersistence(auth, browserLocalPersistence)
-            .then(() => signInWithEmailAndPassword(auth, email, pass))
-            .catch(err => { loginError.innerText = "❌ Identifiants incorrects."; });
+            .then(() => signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value))
+            .catch(err => { document.getElementById('login-error').innerText = "❌ Identifiants incorrects."; });
     });
 
     document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
@@ -178,41 +167,23 @@
         compSelect.innerHTML = "";
         comps[sport].forEach(c => {
             const opt = document.createElement('option');
-            opt.value = c;
-            opt.innerText = (c === "MANUEL") ? "✍️ Saisir manuellement..." : c;
+            opt.value = c; opt.innerText = (c === "MANUEL") ? "✍️ Saisir manuellement..." : c;
             if(selectedVal === c) opt.selected = true;
             compSelect.appendChild(opt);
         });
         checkManualComp();
     }
-
-    window.checkManualComp = function() {
-        const val = document.getElementById('competition').value;
-        document.getElementById('comp-manual-container').style.display = (val === "MANUEL") ? "block" : "none";
-    }
+    window.checkManualComp = () => document.getElementById('comp-manual-container').style.display = (document.getElementById('competition').value === "MANUEL") ? "block" : "none";
     updateCompList();
 
-    const nomInp = document.getElementById('nom');
-    const heureInp = document.getElementById('heure-debut');
-    const sportInp = document.getElementById('sport');
-    const compInp = document.getElementById('competition');
-    const compManInp = document.getElementById('comp-manual');
-    const imgUrlInp = document.getElementById('image-url');
-    
+    const nomInp = document.getElementById('nom'), heureInp = document.getElementById('heure-debut'), sportInp = document.getElementById('sport');
+    const compInp = document.getElementById('competition'), compManInp = document.getElementById('comp-manual'), imgUrlInp = document.getElementById('image-url');
     const src1Nom = document.getElementById('src1-nom'), src1Url = document.getElementById('src1-url');
     const src2Nom = document.getElementById('src2-nom'), src2Url = document.getElementById('src2-url');
     const src3Nom = document.getElementById('src3-nom'), src3Url = document.getElementById('src3-url');
+    const editIdInp = document.getElementById('edit-id'), addBtn = document.getElementById('addBtn'), updateBtn = document.getElementById('updateBtn'), cancelBtn = document.getElementById('cancelBtn');
 
-    const editIdInp = document.getElementById('edit-id');
-    const addBtn = document.getElementById('addBtn');
-    const updateBtn = document.getElementById('updateBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const statusDiv = document.getElementById('status');
-
-    function getSelectedComp() {
-        return (compInp.value === "MANUEL") ? compManInp.value : compInp.value;
-    }
-
+    function getSelectedComp() { return (compInp.value === "MANUEL") ? compManInp.value : compInp.value; }
     function getSources() {
         let sources = [];
         if(src1Url.value.trim() !== "") sources.push({ nom: src1Nom.value || "Serveur 1", url: btoa(src1Url.value.trim()) });
@@ -225,170 +196,91 @@
         const sources = getSources();
         if(nomInp.value && sources.length > 0) {
             addBtn.disabled = true;
-            const finalComp = getSelectedComp();
             try {
-                await addDoc(streamsRef, { 
-                    nom: nomInp.value, heureDebut: heureInp.value,
-                    sport: sportInp.value, competition: finalComp, 
-                    image: imgUrlInp.value, url: sources[0].url, 
-                    sources: sources, priorite: Date.now(), 
-                    forceLive: false 
-                });
+                await addDoc(streamsRef, { nom: nomInp.value, heureDebut: heureInp.value, sport: sportInp.value, competition: getSelectedComp(), image: imgUrlInp.value, url: sources[0].url, sources: sources, priorite: Date.now(), forceLive: false });
                 resetForm();
-                statusDiv.innerText = "✅ Match ajouté !";
-                setTimeout(() => statusDiv.innerText = "", 3000);
             } catch (err) { alert("❌ Erreur : " + err.message); }
             addBtn.disabled = false;
         } else { alert("Il faut un nom et la Source 1 !"); }
     });
 
     updateBtn.addEventListener('click', async () => {
-        const id = editIdInp.value;
-        const sources = getSources();
+        const id = editIdInp.value, sources = getSources();
         if(id && sources.length > 0) {
             updateBtn.disabled = true;
             try {
-                await updateDoc(doc(db, "streams", id), { 
-                    nom: nomInp.value, heureDebut: heureInp.value,
-                    sport: sportInp.value, competition: getSelectedComp(), 
-                    image: imgUrlInp.value, url: sources[0].url, sources: sources
-                });
+                await updateDoc(doc(db, "streams", id), { nom: nomInp.value, heureDebut: heureInp.value, sport: sportInp.value, competition: getSelectedComp(), image: imgUrlInp.value, url: sources[0].url, sources: sources });
                 resetForm();
-                statusDiv.innerText = "✅ Mise à jour réussie !";
-                setTimeout(() => statusDiv.innerText = "", 3000);
             } catch (err) { alert("❌ Erreur : " + err.message); }
             updateBtn.disabled = false;
         } else { alert("❌ ID manquant ou Source 1 vide."); }
     });
 
-    let currentMatches = [];
-
     function chargerListeMatchs() {
         onSnapshot(query(streamsRef, orderBy("priorite", "asc")), (snapshot) => {
             const adminList = document.getElementById('admin-list');
             adminList.innerHTML = '';
-            currentMatches = [];
             
             snapshot.forEach((matchDoc) => {
-                currentMatches.push({ id: matchDoc.id, ...matchDoc.data() });
-            });
-
-            currentMatches.forEach((m, index) => {
-                let dateText = "";
-                if(m.heureDebut) {
-                    let d = new Date(m.heureDebut);
-                    dateText = ` | ⏰ ${d.getHours()}h${(d.getMinutes()<10?'0':'')+d.getMinutes()}`;
-                }
-
-                const isForced = m.forceLive === true;
-
+                const m = matchDoc.data();
+                let dateText = m.heureDebut ? ` | ⏰ ${new Date(m.heureDebut).getHours()}h${(new Date(m.heureDebut).getMinutes()<10?'0':'')+new Date(m.heureDebut).getMinutes()}` : "";
+                
                 adminList.innerHTML += `
-                    <div class="match-item" data-id="${m.id}">
-                        <div class="drag-handle">☰</div>
-                        <div class="order-buttons">
-                            <button class="btn-order" onclick="moveMatch(${index}, -1)">▲</button>
-                            <button class="btn-order" onclick="moveMatch(${index}, 1)">▼</button>
-                        </div>
+                    <div class="match-item" data-id="${matchDoc.id}">
+                        <div class="drag-handle">≡</div>
                         <div class="match-info">
                             <h4>${m.nom}</h4>
                             <span>${m.sport} - ${m.competition}${dateText}</span>
                         </div>
                         <div class="actions">
-                            <button class="btn-force ${isForced ? 'forced' : ''}" onclick="toggleForceLive('${m.id}', ${isForced})" title="Forcer / Libérer le direct">⚡</button>
-                            <button class="btn-edit" onclick="startEdit('${m.id}')">MODIF</button>
-                            <button class="btn-del" onclick="deleteMatch('${m.id}')">×</button>
+                            <button class="btn-test" onclick="window.open('../vip/?id=${matchDoc.id}', '_blank')" title="Tester la chaîne en privé">🧪 TEST</button>
+                            <button class="btn-force ${m.forceLive ? 'forced' : ''}" onclick="toggleForceLive('${matchDoc.id}', ${m.forceLive})" title="Forcer le bouton direct">⚡</button>
+                            <button class="btn-edit" onclick="startEdit('${matchDoc.id}')">✏️</button>
+                            <button class="btn-del" onclick="deleteMatch('${matchDoc.id}')">×</button>
                         </div>
                     </div>`;
             });
             
+            // CONFIGURATION DU CLIC FORT ET GLISSER (Drag & Drop)
             new Sortable(document.getElementById('admin-list'), { 
-                handle: '.drag-handle', 
-                animation: 150, 
-                onEnd: async function() {
+                animation: 200, 
+                delay: 250, // Clic long obligatoire (évite les clics accidentels quand on scrolle)
+                delayOnTouchOnly: true, // Le clic long c'est surtout pour les smartphones
+                onEnd: function() {
                     const items = document.querySelectorAll('.match-item');
-                    items.forEach(async (item, i) => { 
-                        await updateDoc(doc(db, "streams", item.dataset.id), { priorite: i }); 
-                    });
+                    items.forEach((item, index) => { updateDoc(doc(db, "streams", item.dataset.id), { priorite: index }); });
                 }
             });
         });
     }
 
-    // Déplacement via flèches Haut / Bas
-    window.moveMatch = async function(index, direction) {
-        const targetIndex = index + direction;
-        if (targetIndex < 0 || targetIndex >= currentMatches.length) return;
-
-        // Échanger les priorités
-        const temp = currentMatches[index].priorite;
-        currentMatches[index].priorite = currentMatches[targetIndex].priorite;
-        currentMatches[targetIndex].priorite = temp;
-
-        currentMatches[index].priorite = index;
-        currentMatches[targetIndex].priorite = targetIndex;
-
-        try {
-            await updateDoc(doc(db, "streams", currentMatches[index].id), { priorite: currentMatches[index].priorite });
-            await updateDoc(doc(db, "streams", currentMatches[targetIndex].id), { priorite: currentMatches[targetIndex].priorite });
-        } catch (err) {
-            console.error("Erreur réarrangement:", err);
-        }
-    };
-
-    // Bouton Éclair pour forcer / libérer le direct
-    window.toggleForceLive = async (id, currentStatus) => {
-        try {
-            await updateDoc(doc(db, "streams", id), { forceLive: !currentStatus });
-        } catch (err) { alert("❌ Erreur : " + err.message); }
-    };
-
-    window.deleteMatch = async (id) => {
-        if(confirm("Supprimer ce match ?")) {
-            try { await deleteDoc(doc(db, "streams", id)); } 
-            catch (err) { alert("❌ Erreur : " + err.message); }
-        }
-    };
+    window.toggleForceLive = async (id, currentStatus) => { await updateDoc(doc(db, "streams", id), { forceLive: !currentStatus }); };
+    window.deleteMatch = async (id) => { if(confirm("Supprimer ce match ?")) { await deleteDoc(doc(db, "streams", id)); } };
     
     window.startEdit = async (id) => {
-        const s = await getDoc(doc(db, "streams", id));
-        const d = s.data();
+        const s = await getDoc(doc(db, "streams", id)); const d = s.data();
         const safeDecode = (str) => { try { return atob(str); } catch(e) { return str; } };
 
-        nomInp.value = d.nom; 
-        heureInp.value = d.heureDebut || "";
-        sportInp.value = d.sport || "Football";
-        
+        nomInp.value = d.nom; heureInp.value = d.heureDebut || ""; sportInp.value = d.sport || "Football";
         updateCompList();
-        if (Array.from(compInp.options).some(opt => opt.value === d.competition)) {
-            compInp.value = d.competition;
-        } else {
-            compInp.value = "MANUEL";
-            compManInp.value = d.competition;
-        }
-        checkManualComp();
-
-        imgUrlInp.value = d.image; 
-        editIdInp.value = id;
-
+        if (Array.from(compInp.options).some(opt => opt.value === d.competition)) { compInp.value = d.competition; } 
+        else { compInp.value = "MANUEL"; compManInp.value = d.competition; }
+        checkManualComp(); imgUrlInp.value = d.image; editIdInp.value = id;
         src1Url.value = ""; src2Url.value = ""; src3Url.value = "";
+        
         if (d.sources && d.sources.length > 0) {
             if(d.sources[0]) { src1Nom.value = d.sources[0].nom; src1Url.value = safeDecode(d.sources[0].url); }
             if(d.sources[1]) { src2Nom.value = d.sources[1].nom; src2Url.value = safeDecode(d.sources[1].url); }
             if(d.sources[2]) { src3Nom.value = d.sources[2].nom; src3Url.value = safeDecode(d.sources[2].url); }
         } else if (d.url) { src1Url.value = safeDecode(d.url); }
         
-        addBtn.style.display = 'none'; updateBtn.style.display = 'block'; cancelBtn.style.display = 'block';
-        window.scrollTo(0,0);
+        addBtn.style.display = 'none'; updateBtn.style.display = 'block'; cancelBtn.style.display = 'block'; window.scrollTo(0,0);
     };
 
     function resetForm() {
         nomInp.value = ''; heureInp.value = ''; imgUrlInp.value = ''; compManInp.value = ''; editIdInp.value = '';
-        src1Nom.value = 'Serveur 1'; src1Url.value = '';
-        src2Nom.value = 'Lien Externe'; src2Url.value = '';
-        src3Nom.value = 'Secours'; src3Url.value = '';
-        addBtn.style.display = 'block'; updateBtn.style.display = 'none'; cancelBtn.style.display = 'none';
-        statusDiv.innerText = "";
-        updateCompList();
+        src1Nom.value = 'Serveur 1'; src1Url.value = ''; src2Nom.value = 'Lien Externe'; src2Url.value = ''; src3Nom.value = 'Secours'; src3Url.value = '';
+        addBtn.style.display = 'block'; updateBtn.style.display = 'none'; cancelBtn.style.display = 'none'; updateCompList();
     }
     cancelBtn.addEventListener('click', resetForm);
 </script>
