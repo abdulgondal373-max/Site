@@ -26,9 +26,17 @@
         .btn-logout { background: transparent; color: #ff4444; border: 1px solid #ff4444; margin-bottom: 15px; padding: 10px; }
         
         .match-item { background: var(--card); padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; align-items: center; gap: 10px; border-left: 4px solid var(--accent); cursor: grab; transition: background 0.2s;}
-        .match-item.sortable-ghost { opacity: 0.5; background: #222; } /* Style quand on glisse le bloc */
+        .match-item.sortable-ghost { opacity: 0.5; background: #222; }
         
         .drag-handle { color: #555; font-size: 1.5rem; flex-shrink: 0; padding-right: 5px;}
+        
+        /* Styles ajoutés pour les boutons de tri et d'arrêt */
+        .order-buttons { display: flex; flex-direction: column; gap: 4px; }
+        .btn-order { background: #333; color: white; border: none; font-size: 0.6rem; cursor: pointer; border-radius: 3px; padding: 2px 6px; }
+        .btn-order:hover { background: var(--accent); color: black; }
+        .btn-stop { background: #222; border: 1px solid #ff4444; color: #ff4444; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-stop:hover { background: #ff4444; color: #fff; }
+
         .match-info { flex: 1; min-width: 0; pointer-events: none; }
         .match-info h4 { margin: 0; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .match-info span { font-size: 0.7rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
@@ -135,6 +143,12 @@
     const auth = getAuth(app);
     const streamsRef = collection(db, "streams");
 
+    // --- VARIABLES DE GESTION DU TRI EN TEMPS RÉEL ---
+    let currentMatches = [];
+    let isDragging = false; 
+    let sortableInstance = null;
+    // ---------------------------------------------------
+
     const loginScreen = document.getElementById('login-screen');
     const adminScreen = document.getElementById('admin-screen');
     
@@ -216,47 +230,97 @@
         } else { alert("❌ ID manquant ou Source 1 vide."); }
     });
 
+    // --- FONCTION DE CHARGEMENT MISE À JOUR ---
     function chargerListeMatchs() {
         onSnapshot(query(streamsRef, orderBy("priorite", "asc")), (snapshot) => {
+            if (isDragging) return; // Si on glisse un match, on bloque l'actualisation qui fait tout planter
+
             const adminList = document.getElementById('admin-list');
             adminList.innerHTML = '';
+            currentMatches = [];
             
             snapshot.forEach((matchDoc) => {
-                const m = matchDoc.data();
-                let dateText = m.heureDebut ? ` | ⏰ ${new Date(m.heureDebut).getHours()}h${(new Date(m.heureDebut).getMinutes()<10?'0':'')+new Date(m.heureDebut).getMinutes()}` : "";
-                
+                currentMatches.push({ id: matchDoc.id, ...matchDoc.data() });
+            });
+
+            currentMatches.forEach((m, index) => {
+                let dateText = "";
+                if(m.heureDebut) {
+                    let d = new Date(m.heureDebut);
+                    dateText = ` | ⏰ ${d.getHours()}h${(d.getMinutes()<10?'0':'')+d.getMinutes()}`;
+                }
+                const isForced = m.forceLive === true;
+
                 adminList.innerHTML += `
-                    <div class="match-item" data-id="${matchDoc.id}">
-                        <div class="drag-handle">≡</div>
+                    <div class="match-item" data-id="${m.id}">
+                        <div class="drag-handle">☰</div>
+                        <div class="order-buttons">
+                            <button class="btn-order" onclick="moveMatch(${index}, -1)">▲</button>
+                            <button class="btn-order" onclick="moveMatch(${index}, 1)">▼</button>
+                        </div>
                         <div class="match-info">
                             <h4>${m.nom}</h4>
                             <span>${m.sport} - ${m.competition}${dateText}</span>
                         </div>
                         <div class="actions">
-                            <button class="btn-test" onclick="window.open('../vip/?id=${matchDoc.id}', '_blank')" title="Tester la chaîne en privé">🧪 TEST</button>
-                            <button class="btn-force ${m.forceLive ? 'forced' : ''}" onclick="toggleForceLive('${matchDoc.id}', ${m.forceLive})" title="Forcer le bouton direct">⚡</button>
-                            <button class="btn-edit" onclick="startEdit('${matchDoc.id}')">✏️</button>
-                            <button class="btn-del" onclick="deleteMatch('${matchDoc.id}')">×</button>
+                            <button class="btn-stop" onclick="cutStream('${m.id}')" title="Couper le stream">🛑</button>
+                            <button class="btn-force ${isForced ? 'forced' : ''}" onclick="toggleForceLive('${m.id}', ${isForced})" title="Forcer / Libérer le direct">⚡</button>
+                            <button class="btn-edit" onclick="startEdit('${m.id}')">MODIF</button>
+                            <button class="btn-del" onclick="deleteMatch('${m.id}')">×</button>
                         </div>
                     </div>`;
             });
             
-            // CONFIGURATION DU CLIC FORT ET GLISSER (Drag & Drop)
-            new Sortable(document.getElementById('admin-list'), { 
-                animation: 200, 
-                delay: 250, // Clic long obligatoire (évite les clics accidentels quand on scrolle)
-                delayOnTouchOnly: true, // Le clic long c'est surtout pour les smartphones
-                onEnd: function() {
+            if (sortableInstance) sortableInstance.destroy(); // On détruit l'ancien système de glisser pour le recréer proprement
+            
+            sortableInstance = new Sortable(document.getElementById('admin-list'), { 
+                handle: '.drag-handle', 
+                animation: 150, 
+                onStart: () => { isDragging = true; }, // Quand on clique, on met Firebase en pause
+                onEnd: async function() {
                     const items = document.querySelectorAll('.match-item');
-                    items.forEach((item, index) => { updateDoc(doc(db, "streams", item.dataset.id), { priorite: index }); });
+                    let promises = [];
+                    items.forEach((item, i) => { 
+                        promises.push(updateDoc(doc(db, "streams", item.dataset.id), { priorite: i })); 
+                    });
+                    await Promise.all(promises); // On attend que tout soit rangé
+                    isDragging = false; // On enlève la pause
                 }
             });
         });
     }
 
+    // --- NOUVELLE FONCTION DE DÉPLACEMENT VIA LES FLÈCHES ---
+    window.moveMatch = async function(index, direction) {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= currentMatches.length) return;
+
+        isDragging = true; // On met en pause pendant l'échange
+        
+        const temp = currentMatches[index].priorite;
+        currentMatches[index].priorite = currentMatches[targetIndex].priorite;
+        currentMatches[targetIndex].priorite = temp;
+
+        currentMatches[index].priorite = index;
+        currentMatches[targetIndex].priorite = targetIndex;
+
+        try {
+            await Promise.all([
+                updateDoc(doc(db, "streams", currentMatches[index].id), { priorite: currentMatches[index].priorite }),
+                updateDoc(doc(db, "streams", currentMatches[targetIndex].id), { priorite: currentMatches[targetIndex].priorite })
+            ]);
+        } catch (err) {
+            console.error(err);
+        }
+        isDragging = false; // On retire la pause
+    };
+
     window.toggleForceLive = async (id, currentStatus) => { await updateDoc(doc(db, "streams", id), { forceLive: !currentStatus }); };
     window.deleteMatch = async (id) => { if(confirm("Supprimer ce match ?")) { await deleteDoc(doc(db, "streams", id)); } };
     
+    // Fonction par défaut si tu n'as pas encore créé l'action cutStream de ton côté
+    window.cutStream = async (id) => { console.log("Coupure du stream : ", id); /* Ajoute ta logique Firebase ici si besoin */ };
+
     window.startEdit = async (id) => {
         const s = await getDoc(doc(db, "streams", id)); const d = s.data();
         const safeDecode = (str) => { try { return atob(str); } catch(e) { return str; } };
