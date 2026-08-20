@@ -25,21 +25,26 @@
         .btn-update { background: #00ccff; color: #000; margin-top: 10px; display: none; }
         .btn-logout { background: transparent; color: #ff4444; border: 1px solid #ff4444; margin-bottom: 15px; padding: 10px; }
         
-        .match-item { background: var(--card); padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; align-items: center; gap: 10px; border-left: 4px solid var(--accent); }
-        .drag-handle { cursor: grab; color: #444; padding: 5px; font-size: 1.2rem; flex-shrink: 0; }
+        .match-item { background: var(--card); padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; align-items: center; gap: 8px; border-left: 4px solid var(--accent); }
+        .drag-handle { cursor: grab; color: #444; padding: 2px; font-size: 1.1rem; flex-shrink: 0; }
         .match-info { flex: 1; min-width: 0; }
         .match-info h4 { margin: 0; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .match-info span { font-size: 0.7rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-        .actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+        .actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
         
+        .order-buttons { display: flex; flex-direction: column; gap: 2px; }
+        .btn-order { background: #222; color: #aaa; border: none; font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; cursor: pointer; }
+        .btn-order:hover { background: var(--accent); color: #000; }
+
         .btn-icon { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 0; }
+        .btn-force { background: none; border: 1px solid #ffcc00; color: #ffcc00; font-size: 0.8rem; padding: 3px 6px; border-radius: 4px; cursor: pointer; }
+        .btn-force.forced { background: #ffcc00; color: #000; }
         .btn-edit { color: #ffcc00; font-size: 0.7rem; font-weight: 800; border: 1px solid #ffcc00; padding: 4px 8px; border-radius: 4px; background: none; cursor: pointer;}
         .btn-del { color: #ff4444; font-weight: 800; font-size: 1.2rem; background: none; border: none; cursor: pointer; padding: 0; }
 
         #comp-manual-container { display: none; margin-top: 5px; }
         #comp-manual-container input { border-color: var(--accent); }
 
-        /* ÉCRAN DE CONNEXION */
         #login-screen { text-align: center; margin-top: 50px; }
         #admin-screen { display: none; }
     </style>
@@ -151,17 +156,11 @@
         const pass = document.getElementById('login-pass').value;
         
         setPersistence(auth, browserLocalPersistence)
-            .then(() => {
-                return signInWithEmailAndPassword(auth, email, pass);
-            })
-            .catch(err => {
-                loginError.innerText = "❌ Identifiants incorrects.";
-            });
+            .then(() => signInWithEmailAndPassword(auth, email, pass))
+            .catch(err => { loginError.innerText = "❌ Identifiants incorrects."; });
     });
 
-    document.getElementById('btnLogout').addEventListener('click', () => {
-        signOut(auth);
-    });
+    document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
 
     const comps = {
         "Football": ["Coupe du Monde 🌍", "Ligue 1 🇫🇷", "Ligue 2 🇫🇷", "Champions League 🇪🇺", "Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "La Liga 🇪🇸", "Serie A 🇮🇹", "Bundesliga 🇩🇪", "Europa League 🇪🇺", "Conference League 🇪🇺", "MANUEL"],
@@ -191,7 +190,6 @@
         const val = document.getElementById('competition').value;
         document.getElementById('comp-manual-container').style.display = (val === "MANUEL") ? "block" : "none";
     }
-
     updateCompList();
 
     const nomInp = document.getElementById('nom');
@@ -201,12 +199,9 @@
     const compManInp = document.getElementById('comp-manual');
     const imgUrlInp = document.getElementById('image-url');
     
-    const src1Nom = document.getElementById('src1-nom');
-    const src1Url = document.getElementById('src1-url');
-    const src2Nom = document.getElementById('src2-nom');
-    const src2Url = document.getElementById('src2-url');
-    const src3Nom = document.getElementById('src3-nom');
-    const src3Url = document.getElementById('src3-url');
+    const src1Nom = document.getElementById('src1-nom'), src1Url = document.getElementById('src1-url');
+    const src2Nom = document.getElementById('src2-nom'), src2Url = document.getElementById('src2-url');
+    const src3Nom = document.getElementById('src3-nom'), src3Url = document.getElementById('src3-url');
 
     const editIdInp = document.getElementById('edit-id');
     const addBtn = document.getElementById('addBtn');
@@ -218,7 +213,6 @@
         return (compInp.value === "MANUEL") ? compManInp.value : compInp.value;
     }
 
-    // 🔒 CRYPTAGE AUTO : On encrypte les liens avant l'envoi
     function getSources() {
         let sources = [];
         if(src1Url.value.trim() !== "") sources.push({ nom: src1Nom.value || "Serveur 1", url: btoa(src1Url.value.trim()) });
@@ -232,31 +226,20 @@
         if(nomInp.value && sources.length > 0) {
             addBtn.disabled = true;
             const finalComp = getSelectedComp();
-            const mainUrl = sources[0].url;
-
             try {
                 await addDoc(streamsRef, { 
-                    nom: nomInp.value, 
-                    heureDebut: heureInp.value,
-                    sport: sportInp.value, 
-                    competition: finalComp, 
-                    image: imgUrlInp.value, 
-                    url: mainUrl, 
-                    sources: sources, 
-                    priorite: Date.now(), 
-                    visible: true
+                    nom: nomInp.value, heureDebut: heureInp.value,
+                    sport: sportInp.value, competition: finalComp, 
+                    image: imgUrlInp.value, url: sources[0].url, 
+                    sources: sources, priorite: Date.now(), 
+                    forceLive: false 
                 });
                 resetForm();
-                statusDiv.innerText = "✅ Match ajouté et liens cryptés !";
+                statusDiv.innerText = "✅ Match ajouté !";
                 setTimeout(() => statusDiv.innerText = "", 3000);
-            } catch (err) {
-                console.error("Erreur ajout match:", err);
-                alert("❌ Erreur lors de l'ajout : " + err.message);
-            }
+            } catch (err) { alert("❌ Erreur : " + err.message); }
             addBtn.disabled = false;
-        } else {
-            alert("Il faut au moins un nom de match et une Source 1 !");
-        }
+        } else { alert("Il faut un nom et la Source 1 !"); }
     });
 
     updateBtn.addEventListener('click', async () => {
@@ -264,105 +247,119 @@
         const sources = getSources();
         if(id && sources.length > 0) {
             updateBtn.disabled = true;
-            const finalComp = getSelectedComp();
-            const mainUrl = sources[0].url;
-
             try {
                 await updateDoc(doc(db, "streams", id), { 
-                    nom: nomInp.value, 
-                    heureDebut: heureInp.value,
-                    sport: sportInp.value, 
-                    competition: finalComp, 
-                    image: imgUrlInp.value, 
-                    url: mainUrl,
-                    sources: sources
+                    nom: nomInp.value, heureDebut: heureInp.value,
+                    sport: sportInp.value, competition: getSelectedComp(), 
+                    image: imgUrlInp.value, url: sources[0].url, sources: sources
                 });
                 resetForm();
-                statusDiv.innerText = "✅ Mise à jour et cryptage réussis !";
+                statusDiv.innerText = "✅ Mise à jour réussie !";
                 setTimeout(() => statusDiv.innerText = "", 3000);
-            } catch (err) {
-                console.error("Erreur mise à jour:", err);
-                alert("❌ Erreur lors de la mise à jour : " + err.message);
-            }
+            } catch (err) { alert("❌ Erreur : " + err.message); }
             updateBtn.disabled = false;
-        } else {
-            alert("❌ Il faut au moins un ID (clique sur MODIF) et une Source 1 remplie.");
-        }
+        } else { alert("❌ ID manquant ou Source 1 vide."); }
     });
+
+    let currentMatches = [];
 
     function chargerListeMatchs() {
         onSnapshot(query(streamsRef, orderBy("priorite", "asc")), (snapshot) => {
             const adminList = document.getElementById('admin-list');
             adminList.innerHTML = '';
+            currentMatches = [];
+            
             snapshot.forEach((matchDoc) => {
-                const m = matchDoc.data();
-                const id = matchDoc.id;
-                const isVisible = m.visible !== false;
-                
+                currentMatches.push({ id: matchDoc.id, ...matchDoc.data() });
+            });
+
+            currentMatches.forEach((m, index) => {
                 let dateText = "";
                 if(m.heureDebut) {
                     let d = new Date(m.heureDebut);
                     dateText = ` | ⏰ ${d.getHours()}h${(d.getMinutes()<10?'0':'')+d.getMinutes()}`;
                 }
 
+                const isForced = m.forceLive === true;
+
                 adminList.innerHTML += `
-                    <div class="match-item" data-id="${id}" style="opacity: ${isVisible ? '1' : '0.4'}">
+                    <div class="match-item" data-id="${m.id}">
                         <div class="drag-handle">☰</div>
+                        <div class="order-buttons">
+                            <button class="btn-order" onclick="moveMatch(${index}, -1)">▲</button>
+                            <button class="btn-order" onclick="moveMatch(${index}, 1)">▼</button>
+                        </div>
                         <div class="match-info">
                             <h4>${m.nom}</h4>
                             <span>${m.sport} - ${m.competition}${dateText}</span>
                         </div>
                         <div class="actions">
-                            <button class="btn-icon" onclick="toggleVis('${id}', ${isVisible})">${isVisible ? '👁️' : '🚫'}</button>
-                            <button class="btn-edit" onclick="startEdit('${id}')">MODIF</button>
-                            <button class="btn-del" onclick="deleteMatch('${id}')">×</button>
+                            <button class="btn-force ${isForced ? 'forced' : ''}" onclick="toggleForceLive('${m.id}', ${isForced})" title="Forcer / Libérer le direct">⚡</button>
+                            <button class="btn-edit" onclick="startEdit('${m.id}')">MODIF</button>
+                            <button class="btn-del" onclick="deleteMatch('${m.id}')">×</button>
                         </div>
                     </div>`;
             });
             
-            new Sortable(document.getElementById('admin-list'), { handle: '.drag-handle', animation: 150, onEnd: async function() {
-                const items = document.querySelectorAll('.match-item');
-                items.forEach(async (item, index) => { await updateDoc(doc(db, "streams", item.dataset.id), { priorite: index }); });
-            }});
+            new Sortable(document.getElementById('admin-list'), { 
+                handle: '.drag-handle', 
+                animation: 150, 
+                onEnd: async function() {
+                    const items = document.querySelectorAll('.match-item');
+                    items.forEach(async (item, i) => { 
+                        await updateDoc(doc(db, "streams", item.dataset.id), { priorite: i }); 
+                    });
+                }
+            });
         });
     }
 
-    window.toggleVis = async (id, status) => {
+    // Déplacement via flèches Haut / Bas
+    window.moveMatch = async function(index, direction) {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= currentMatches.length) return;
+
+        // Échanger les priorités
+        const temp = currentMatches[index].priorite;
+        currentMatches[index].priorite = currentMatches[targetIndex].priorite;
+        currentMatches[targetIndex].priorite = temp;
+
+        currentMatches[index].priorite = index;
+        currentMatches[targetIndex].priorite = targetIndex;
+
         try {
-            await updateDoc(doc(db, "streams", id), { visible: !status });
+            await updateDoc(doc(db, "streams", currentMatches[index].id), { priorite: currentMatches[index].priorite });
+            await updateDoc(doc(db, "streams", currentMatches[targetIndex].id), { priorite: currentMatches[targetIndex].priorite });
         } catch (err) {
-            console.error("Erreur visibilité:", err);
-            alert("❌ Erreur : " + err.message);
+            console.error("Erreur réarrangement:", err);
         }
     };
+
+    // Bouton Éclair pour forcer / libérer le direct
+    window.toggleForceLive = async (id, currentStatus) => {
+        try {
+            await updateDoc(doc(db, "streams", id), { forceLive: !currentStatus });
+        } catch (err) { alert("❌ Erreur : " + err.message); }
+    };
+
     window.deleteMatch = async (id) => {
         if(confirm("Supprimer ce match ?")) {
-            try {
-                await deleteDoc(doc(db, "streams", id));
-            } catch (err) {
-                console.error("Erreur suppression:", err);
-                alert("❌ Erreur lors de la suppression : " + err.message);
-            }
+            try { await deleteDoc(doc(db, "streams", id)); } 
+            catch (err) { alert("❌ Erreur : " + err.message); }
         }
     };
     
-    // 🔓 DECRYPTAGE AUTO : Pour que l'admin voie les vrais liens quand il modifie
     window.startEdit = async (id) => {
         const s = await getDoc(doc(db, "streams", id));
         const d = s.data();
-        
-        // Fonction sécurisée pour décrypter (au cas où d'anciens liens ne seraient pas cryptés)
-        const safeDecode = (str) => {
-            try { return atob(str); } catch(e) { return str; }
-        };
+        const safeDecode = (str) => { try { return atob(str); } catch(e) { return str; } };
 
         nomInp.value = d.nom; 
         heureInp.value = d.heureDebut || "";
         sportInp.value = d.sport || "Football";
         
         updateCompList();
-        const exists = Array.from(compInp.options).some(opt => opt.value === d.competition);
-        if (exists) {
+        if (Array.from(compInp.options).some(opt => opt.value === d.competition)) {
             compInp.value = d.competition;
         } else {
             compInp.value = "MANUEL";
@@ -373,21 +370,14 @@
         imgUrlInp.value = d.image; 
         editIdInp.value = id;
 
-        src1Nom.value = "Serveur 1"; src1Url.value = "";
-        src2Nom.value = "Lien Externe"; src2Url.value = "";
-        src3Nom.value = "Secours"; src3Url.value = "";
-
+        src1Url.value = ""; src2Url.value = ""; src3Url.value = "";
         if (d.sources && d.sources.length > 0) {
             if(d.sources[0]) { src1Nom.value = d.sources[0].nom; src1Url.value = safeDecode(d.sources[0].url); }
             if(d.sources[1]) { src2Nom.value = d.sources[1].nom; src2Url.value = safeDecode(d.sources[1].url); }
             if(d.sources[2]) { src3Nom.value = d.sources[2].nom; src3Url.value = safeDecode(d.sources[2].url); }
-        } else if (d.url) {
-            src1Url.value = safeDecode(d.url);
-        }
+        } else if (d.url) { src1Url.value = safeDecode(d.url); }
         
-        addBtn.style.display = 'none'; 
-        updateBtn.style.display = 'block'; 
-        cancelBtn.style.display = 'block';
+        addBtn.style.display = 'none'; updateBtn.style.display = 'block'; cancelBtn.style.display = 'block';
         window.scrollTo(0,0);
     };
 

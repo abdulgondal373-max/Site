@@ -330,16 +330,23 @@
                         let isLive = m.visible !== false;
                         let isCountdown = false;
                         
-                        if (m.heureDebut) {
-                            const matchTime = getParisTime(m.heureDebut);
-                            const now = new Date().getTime();
-                            if (matchTime > now) {
-                                isLive = false;
-                                isCountdown = true;
-                            } else {
-                                isLive = true;
-                            }
-                        }
+                        // On vérifie d'abord si le mode live forcé (⚡) est activé
+if (m.forceLive) {
+    isLive = true;
+    isCountdown = false;
+} else if (m.heureDebut) {
+    const matchTime = getParisTime(m.heureDebut);
+    const now = new Date().getTime();
+    if (matchTime > now) {
+        isLive = false;
+        isCountdown = true;
+    } else {
+        isLive = true;
+    }
+} else {
+    isLive = true; // Par défaut s'il n'y a ni heure ni statut forcé
+}
+
 
                         if (isLive) {
                             statusHtml = `<div class="live-dot" id="status-${m.id}"><div class="dot"></div> EN DIRECT</div>`;
