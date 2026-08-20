@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zone Boss - Gestion Popups</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0c; color: white; padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        h1 { color: #00ff88; text-align: center; }
+        .card { background: #111114; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+        input, textarea, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 6px; border: none; box-sizing: border-box; }
+        input, textarea { background: #222; color: white; }
+        button { background: #00ff88; color: black; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .popup-item { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid; }
+        .btn-delete { background: #ff4444; color: white; width: auto; padding: 8px 15px; margin: 0; }
+        .btn-edit { background: #3399ff; color: white; width: auto; padding: 8px 15px; margin: 0 8px 0 0; }
+        .popup-actions { display: flex; gap: 0; flex-shrink: 0; }
+        .color-picker { display: flex; align-items: center; gap: 10px; }
+        input[type="color"] { width: 50px; height: 50px; padding: 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ GESTION DES POPUPS</h1>
+        
+        <div class="card">
+            <h3 id="form-title">➕ Ajouter un nouveau Popup</h3>
+            <input type="text" id="p-title" placeholder="Titre (ex: 💎 ACCÈS VIP PREMIUM)">
+            <textarea id="p-text" rows="3" placeholder="Texte de description..."></textarea>
+            <input type="text" id="p-link" placeholder="Lien (ex: https://discord.gg/...)">
+            <input type="text" id="p-btnText" placeholder="Texte du bouton (ex: PROFITER DE L'OFFRE 🔥)">
+            <div class="color-picker">
+                <label>Couleur du bouton :</label>
+                <input type="color" id="p-color" value="#ffd700">
+            </div>
+            <button id="btn-add">Ajouter le Popup</button>
+            <button id="btn-cancel-edit" style="display:none; background:#555; color:white;">Annuler la modification</button>
+        </div>
+
+        <div class="card">
+            <h3>📋 Popups Actifs (Tirés au sort sur le site)</h3>
+            <div id="popups-list">Chargement...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCznQgA4zvs1dhZQzqtPqjfabsbBhEmvhU", 
+            authDomain: "akhh-3b20d.firebaseapp.com", 
+            projectId: "akhh-3b20d", 
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let editingId = null; // null = mode "ajout", sinon = id du popup en cours de modification
+
+        const titleInput = document.getElementById('p-title');
+        const textInput = document.getElementById('p-text');
+        const linkInput = document.getElementById('p-link');
+        const btnTextInput = document.getElementById('p-btnText');
+        const colorInput = document.getElementById('p-color');
+        const formTitle = document.getElementById('form-title');
+        const btnAdd = document.getElementById('btn-add');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
+
+        const resetForm = () => {
+            editingId = null;
+            titleInput.value = '';
+            textInput.value = '';
+            linkInput.value = '';
+            btnTextInput.value = '';
+            colorInput.value = '#ffd700';
+            formTitle.textContent = '➕ Ajouter un nouveau Popup';
+            btnAdd.textContent = 'Ajouter le Popup';
+            btnCancelEdit.style.display = 'none';
+        };
+
+        btnCancelEdit.addEventListener('click', resetForm);
+
+        // Ajouter OU modifier un popup selon le mode actuel
+        btnAdd.addEventListener('click', async () => {
+            const title = titleInput.value;
+            const text = textInput.value;
+            const link = linkInput.value;
+            const btnText = btnTextInput.value;
+            const color = colorInput.value;
+
+            if(!title || !text || !link || !btnText) return alert("Remplis tous les champs boss !");
+
+            if (editingId) {
+                await updateDoc(doc(db, "popups", editingId), { title, text, link, btnText, color });
+            } else {
+                await addDoc(collection(db, "popups"), { title, text, link, btnText, color });
+            }
+
+            resetForm();
+        });
+
+        // Afficher, modifier et supprimer les popups
+        onSnapshot(collection(db, "popups"), (snapshot) => {
+            const list = document.getElementById('popups-list');
+            list.innerHTML = '';
+            snapshot.forEach((d) => {
+                const data = d.data();
+                const div = document.createElement('div');
+                div.className = 'popup-item';
+                div.style.borderLeftColor = data.color;
+                div.innerHTML = `
+                    <div>
+                        <strong>${data.title}</strong><br>
+                        <small style="color:#aaa">${data.text}</small>
+                    </div>
+                    <div class="popup-actions">
+                        <button class="btn-edit" data-id="${d.id}">Modifier</button>
+                        <button class="btn-delete" data-id="${d.id}">Supprimer</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+
+            // Action modifier : remplit le formulaire avec les données existantes
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const data = snapshot.docs.find(d => d.id === id)?.data();
+                    if (!data) return;
+
+                    editingId = id;
+                    titleInput.value = data.title || '';
+                    textInput.value = data.text || '';
+                    linkInput.value = data.link || '';
+                    btnTextInput.value = data.btnText || '';
+                    colorInput.value = data.color || '#ffd700';
+
+                    formTitle.textContent = '✏️ Modifier le Popup';
+                    btnAdd.textContent = 'Enregistrer les modifications';
+                    btnCancelEdit.style.display = 'block';
+
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+
+            // Action supprimer
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    if(confirm("Tu veux vraiment supprimer ce popup ?")) {
+                        if (editingId === id) resetForm();
+                        await deleteDoc(doc(db, "popups", id));
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

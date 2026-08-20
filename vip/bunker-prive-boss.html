@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKH TV - ZONE BOSS SÉCURISÉE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        :root { --bg: #0a0a0c; --card: #141417; --accent: #00ff88; --text: #fff; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .container { max-width: 500px; margin: auto; }
+        h2 { text-align: center; color: var(--accent); text-transform: uppercase; font-size: 1.1rem; margin-bottom: 20px; }
+        
+        .form-group { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 25px; }
+        input, select { width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; font-family: 'Poppins'; }
+        input[type="datetime-local"] { color-scheme: dark; border-color: var(--accent); color: var(--accent); font-weight: 600;}
+        
+        .source-box { border: 1px solid rgba(0, 255, 136, 0.2); padding: 10px; border-radius: 8px; margin: 10px 0; background: #0a0a0c; }
+        .source-box h4 { margin: 0 0 5px 0; font-size: 0.75rem; color: var(--accent); display: flex; align-items: center; gap: 5px; }
+        .source-box input { margin: 4px 0; padding: 10px; font-size: 0.8rem; }
+
+        button { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; }
+        .btn-add { background: var(--accent); color: #000; margin-top: 10px; }
+        .btn-update { background: #00ccff; color: #000; margin-top: 10px; display: none; }
+        .btn-logout { background: transparent; color: #ff4444; border: 1px solid #ff4444; margin-bottom: 15px; padding: 10px; }
+        
+        .match-item { background: var(--card); padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; align-items: center; gap: 10px; border-left: 4px solid var(--accent); cursor: grab; transition: background 0.2s;}
+        .match-item.sortable-ghost { opacity: 0.5; background: #222; } /* Style quand on glisse le bloc */
+        
+        .drag-handle { color: #555; font-size: 1.5rem; flex-shrink: 0; padding-right: 5px;}
+        .match-info { flex: 1; min-width: 0; pointer-events: none; }
+        .match-info h4 { margin: 0; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .match-info span { font-size: 0.7rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        
+        .actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+        .btn-icon { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 0; }
+        
+        .btn-test { background: #222; border: 1px solid #00ccff; color: #00ccff; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-test:hover { background: #00ccff; color: #000; }
+        
+        .btn-force { background: none; border: 1px solid #ffcc00; color: #ffcc00; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .btn-force.forced { background: #ffcc00; color: #000; font-weight: bold; }
+        
+        .btn-edit { color: #fff; font-size: 0.7rem; font-weight: 800; border: 1px solid #666; padding: 4px 8px; border-radius: 4px; background: #333; cursor: pointer;}
+        .btn-del { color: #ff4444; font-weight: 800; font-size: 1.2rem; background: none; border: none; cursor: pointer; padding: 0; }
+
+        #comp-manual-container { display: none; margin-top: 5px; }
+        #comp-manual-container input { border-color: var(--accent); }
+
+        #login-screen { text-align: center; margin-top: 50px; }
+        #admin-screen { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div id="login-screen" class="form-group">
+        <h2>🔒 ACCÈS BOSS</h2>
+        <input type="email" id="login-email" placeholder="Email Admin">
+        <input type="password" id="login-pass" placeholder="Mot de passe">
+        <button id="btnLogin" class="btn-add">SE CONNECTER</button>
+        <div id="login-error" style="color: #ff4444; margin-top: 10px; font-size: 0.8rem; font-weight: bold;"></div>
+    </div>
+
+    <div id="admin-screen">
+        <button id="btnLogout" class="btn-logout">Déconnexion</button>
+        <h2>Zone Boss - AKH TV</h2>
+
+        <div class="form-group">
+            <input type="hidden" id="edit-id">
+            <input type="text" id="nom" placeholder="Nom du match (ex: PSG vs OM)">
+            
+            <input type="datetime-local" id="heure-debut" title="Heure de lancement automatique">
+
+            <select id="sport" onchange="updateCompList()">
+                <option value="Football">⚽ Football</option>
+                <option value="Formule 1">🏎️ Formule 1</option>
+                <option value="MMA/UFC">🥊 MMA / UFC</option>
+                <option value="WWE">🤼 WWE</option>
+                <option value="Basketball">🏀 Basketball</option>
+                <option value="Tennis">🎾 Tennis</option>
+                <option value="Divers">🏆 Divers</option>
+            </select>
+
+            <select id="competition" onchange="checkManualComp()"></select>
+            <div id="comp-manual-container"><input type="text" id="comp-manual" placeholder="Écris le nom du championnat ici..."></div>
+            <input type="text" id="image-url" placeholder="Lien de l'image (URL obligatoire)">
+            
+            <div class="source-box">
+                <h4>▶ Source 1 (Principale)</h4>
+                <input type="text" id="src1-nom" placeholder="Nom du bouton" value="Serveur 1">
+                <input type="text" id="src1-url" placeholder="Lien du flux (.m3u8) ou Cartelive">
+            </div>
+
+            <div class="source-box">
+                <h4>▶ Source 2 (Externe)</h4>
+                <input type="text" id="src2-nom" placeholder="Nom du bouton" value="Lien Externe">
+                <input type="text" id="src2-url" placeholder="Lien du site qui bloque les iframes">
+            </div>
+
+            <div class="source-box">
+                <h4>▶ Source 3 (Optionnelle)</h4>
+                <input type="text" id="src3-nom" placeholder="Nom du bouton" value="Secours">
+                <input type="text" id="src3-url" placeholder="Lien de secours">
+            </div>
+            
+            <button class="btn-add" id="addBtn">Ajouter le match</button>
+            <button class="btn-update" id="updateBtn">Mettre à jour le match</button>
+            <button id="cancelBtn" style="display:none; background:transparent; color:#555; margin-top:10px; font-size:0.7rem;">Annuler</button>
+            <div id="status" style="font-size: 0.7rem; text-align: center; margin-top: 10px; color: var(--accent);"></div>
+        </div>
+
+        <div id="admin-list"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCznQgA4zvs1dhZQzqtPqjfabsbBhEmvhU", 
+        authDomain: "akhh-3b20d.firebaseapp.com", 
+        projectId: "akhh-3b20d", 
+        storageBucket: "akhh-3b20d.firebasestorage.app", 
+        messagingSenderId: "702428098406", 
+        appId: "1:702428098406:web:6f164b6674c3fe6019e2a7" 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const streamsRef = collection(db, "streams");
+
+    const loginScreen = document.getElementById('login-screen');
+    const adminScreen = document.getElementById('admin-screen');
+    
+    onAuthStateChanged(auth, (user) => {
+        if (user) { loginScreen.style.display = 'none'; adminScreen.style.display = 'block'; chargerListeMatchs(); } 
+        else { loginScreen.style.display = 'block'; adminScreen.style.display = 'none'; }
+    });
+
+    document.getElementById('btnLogin').addEventListener('click', () => {
+        setPersistence(auth, browserLocalPersistence)
+            .then(() => signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value))
+            .catch(err => { document.getElementById('login-error').innerText = "❌ Identifiants incorrects."; });
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
+
+    const comps = {
+        "Football": ["Coupe du Monde 🌍", "Ligue 1 🇫🇷", "Ligue 2 🇫🇷", "Champions League 🇪🇺", "Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "La Liga 🇪🇸", "Serie A 🇮🇹", "Bundesliga 🇩🇪", "Europa League 🇪🇺", "Conference League 🇪🇺", "MANUEL"],
+        "Formule 1": ["Grand Prix (Course)", "Qualifications", "Essais Libres", "MANUEL"],
+        "MMA/UFC": ["UFC", "PFL", "ARES", "Bellator", "KSW", "MANUEL"],
+        "WWE": ["WWE RAW", "WWE SmackDown", "WWE NXT", "WrestleMania", "MANUEL"],
+        "Basketball": ["NBA", "EuroLeague", "Betclic Elite", "MANUEL"],
+        "Tennis": ["Roland Garros", "Wimbledon", "US Open", "ATP / WTA", "MANUEL"],
+        "Divers": ["Direct", "Événement Spécial", "MANUEL"]
+    };
+
+    window.updateCompList = function(selectedVal = null) {
+        const sport = document.getElementById('sport').value;
+        const compSelect = document.getElementById('competition');
+        compSelect.innerHTML = "";
+        comps[sport].forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c; opt.innerText = (c === "MANUEL") ? "✍️ Saisir manuellement..." : c;
+            if(selectedVal === c) opt.selected = true;
+            compSelect.appendChild(opt);
+        });
+        checkManualComp();
+    }
+    window.checkManualComp = () => document.getElementById('comp-manual-container').style.display = (document.getElementById('competition').value === "MANUEL") ? "block" : "none";
+    updateCompList();
+
+    const nomInp = document.getElementById('nom'), heureInp = document.getElementById('heure-debut'), sportInp = document.getElementById('sport');
+    const compInp = document.getElementById('competition'), compManInp = document.getElementById('comp-manual'), imgUrlInp = document.getElementById('image-url');
+    const src1Nom = document.getElementById('src1-nom'), src1Url = document.getElementById('src1-url');
+    const src2Nom = document.getElementById('src2-nom'), src2Url = document.getElementById('src2-url');
+    const src3Nom = document.getElementById('src3-nom'), src3Url = document.getElementById('src3-url');
+    const editIdInp = document.getElementById('edit-id'), addBtn = document.getElementById('addBtn'), updateBtn = document.getElementById('updateBtn'), cancelBtn = document.getElementById('cancelBtn');
+
+    function getSelectedComp() { return (compInp.value === "MANUEL") ? compManInp.value : compInp.value; }
+    function getSources() {
+        let sources = [];
+        if(src1Url.value.trim() !== "") sources.push({ nom: src1Nom.value || "Serveur 1", url: btoa(src1Url.value.trim()) });
+        if(src2Url.value.trim() !== "") sources.push({ nom: src2Nom.value || "Lien Externe", url: btoa(src2Url.value.trim()) });
+        if(src3Url.value.trim() !== "") sources.push({ nom: src3Nom.value || "Secours", url: btoa(src3Url.value.trim()) });
+        return sources;
+    }
+
+    addBtn.addEventListener('click', async () => {
+        const sources = getSources();
+        if(nomInp.value && sources.length > 0) {
+            addBtn.disabled = true;
+            try {
+                await addDoc(streamsRef, { nom: nomInp.value, heureDebut: heureInp.value, sport: sportInp.value, competition: getSelectedComp(), image: imgUrlInp.value, url: sources[0].url, sources: sources, priorite: Date.now(), forceLive: false });
+                resetForm();
+            } catch (err) { alert("❌ Erreur : " + err.message); }
+            addBtn.disabled = false;
+        } else { alert("Il faut un nom et la Source 1 !"); }
+    });
+
+    updateBtn.addEventListener('click', async () => {
+        const id = editIdInp.value, sources = getSources();
+        if(id && sources.length > 0) {
+            updateBtn.disabled = true;
+            try {
+                await updateDoc(doc(db, "streams", id), { nom: nomInp.value, heureDebut: heureInp.value, sport: sportInp.value, competition: getSelectedComp(), image: imgUrlInp.value, url: sources[0].url, sources: sources });
+                resetForm();
+            } catch (err) { alert("❌ Erreur : " + err.message); }
+            updateBtn.disabled = false;
+        } else { alert("❌ ID manquant ou Source 1 vide."); }
+    });
+
+    function chargerListeMatchs() {
+        onSnapshot(query(streamsRef, orderBy("priorite", "asc")), (snapshot) => {
+            const adminList = document.getElementById('admin-list');
+            adminList.innerHTML = '';
+            
+            snapshot.forEach((matchDoc) => {
+                const m = matchDoc.data();
+                let dateText = m.heureDebut ? ` | ⏰ ${new Date(m.heureDebut).getHours()}h${(new Date(m.heureDebut).getMinutes()<10?'0':'')+new Date(m.heureDebut).getMinutes()}` : "";
+                
+                adminList.innerHTML += `
+                    <div class="match-item" data-id="${matchDoc.id}">
+                        <div class="drag-handle">≡</div>
+                        <div class="match-info">
+                            <h4>${m.nom}</h4>
+                            <span>${m.sport} - ${m.competition}${dateText}</span>
+                        </div>
+                        <div class="actions">
+                            <button class="btn-test" onclick="window.open('../vip/?id=${matchDoc.id}', '_blank')" title="Tester la chaîne en privé">🧪 TEST</button>
+                            <button class="btn-force ${m.forceLive ? 'forced' : ''}" onclick="toggleForceLive('${matchDoc.id}', ${m.forceLive})" title="Forcer le bouton direct">⚡</button>
+                            <button class="btn-edit" onclick="startEdit('${matchDoc.id}')">✏️</button>
+                            <button class="btn-del" onclick="deleteMatch('${matchDoc.id}')">×</button>
+                        </div>
+                    </div>`;
+            });
+            
+            // CONFIGURATION DU CLIC FORT ET GLISSER (Drag & Drop)
+            new Sortable(document.getElementById('admin-list'), { 
+                animation: 200, 
+                delay: 250, // Clic long obligatoire (évite les clics accidentels quand on scrolle)
+                delayOnTouchOnly: true, // Le clic long c'est surtout pour les smartphones
+                onEnd: function() {
+                    const items = document.querySelectorAll('.match-item');
+                    items.forEach((item, index) => { updateDoc(doc(db, "streams", item.dataset.id), { priorite: index }); });
+                }
+            });
+        });
+    }
+
+    window.toggleForceLive = async (id, currentStatus) => { await updateDoc(doc(db, "streams", id), { forceLive: !currentStatus }); };
+    window.deleteMatch = async (id) => { if(confirm("Supprimer ce match ?")) { await deleteDoc(doc(db, "streams", id)); } };
+    
+    window.startEdit = async (id) => {
+        const s = await getDoc(doc(db, "streams", id)); const d = s.data();
+        const safeDecode = (str) => { try { return atob(str); } catch(e) { return str; } };
+
+        nomInp.value = d.nom; heureInp.value = d.heureDebut || ""; sportInp.value = d.sport || "Football";
+        updateCompList();
+        if (Array.from(compInp.options).some(opt => opt.value === d.competition)) { compInp.value = d.competition; } 
+        else { compInp.value = "MANUEL"; compManInp.value = d.competition; }
+        checkManualComp(); imgUrlInp.value = d.image; editIdInp.value = id;
+        src1Url.value = ""; src2Url.value = ""; src3Url.value = "";
+        
+        if (d.sources && d.sources.length > 0) {
+            if(d.sources[0]) { src1Nom.value = d.sources[0].nom; src1Url.value = safeDecode(d.sources[0].url); }
+            if(d.sources[1]) { src2Nom.value = d.sources[1].nom; src2Url.value = safeDecode(d.sources[1].url); }
+            if(d.sources[2]) { src3Nom.value = d.sources[2].nom; src3Url.value = safeDecode(d.sources[2].url); }
+        } else if (d.url) { src1Url.value = safeDecode(d.url); }
+        
+        addBtn.style.display = 'none'; updateBtn.style.display = 'block'; cancelBtn.style.display = 'block'; window.scrollTo(0,0);
+    };
+
+    function resetForm() {
+        nomInp.value = ''; heureInp.value = ''; imgUrlInp.value = ''; compManInp.value = ''; editIdInp.value = '';
+        src1Nom.value = 'Serveur 1'; src1Url.value = ''; src2Nom.value = 'Lien Externe'; src2Url.value = ''; src3Nom.value = 'Secours'; src3Url.value = '';
+        addBtn.style.display = 'block'; updateBtn.style.display = 'none'; cancelBtn.style.display = 'none'; updateCompList();
+    }
+    cancelBtn.addEventListener('click', resetForm);
+</script>
+</body>
+</html>
