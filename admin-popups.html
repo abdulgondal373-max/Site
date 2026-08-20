@@ -14,6 +14,8 @@
         button { background: #00ff88; color: black; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .popup-item { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid; }
         .btn-delete { background: #ff4444; color: white; width: auto; padding: 8px 15px; margin: 0; }
+        .btn-edit { background: #3399ff; color: white; width: auto; padding: 8px 15px; margin: 0 8px 0 0; }
+        .popup-actions { display: flex; gap: 0; flex-shrink: 0; }
         .color-picker { display: flex; align-items: center; gap: 10px; }
         input[type="color"] { width: 50px; height: 50px; padding: 0; cursor: pointer; }
     </style>
@@ -23,7 +25,7 @@
         <h1>⚙️ GESTION DES POPUPS</h1>
         
         <div class="card">
-            <h3>➕ Ajouter un nouveau Popup</h3>
+            <h3 id="form-title">➕ Ajouter un nouveau Popup</h3>
             <input type="text" id="p-title" placeholder="Titre (ex: 💎 ACCÈS VIP PREMIUM)">
             <textarea id="p-text" rows="3" placeholder="Texte de description..."></textarea>
             <input type="text" id="p-link" placeholder="Lien (ex: https://discord.gg/...)">
@@ -33,6 +35,7 @@
                 <input type="color" id="p-color" value="#ffd700">
             </div>
             <button id="btn-add">Ajouter le Popup</button>
+            <button id="btn-cancel-edit" style="display:none; background:#555; color:white;">Annuler la modification</button>
         </div>
 
         <div class="card">
@@ -43,7 +46,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const firebaseConfig = { 
             apiKey: "AIzaSyCznQgA4zvs1dhZQzqtPqjfabsbBhEmvhU", 
@@ -53,26 +56,51 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Ajouter un popup
-        document.getElementById('btn-add').addEventListener('click', async () => {
-            const title = document.getElementById('p-title').value;
-            const text = document.getElementById('p-text').value;
-            const link = document.getElementById('p-link').value;
-            const btnText = document.getElementById('p-btnText').value;
-            const color = document.getElementById('p-color').value;
+        let editingId = null; // null = mode "ajout", sinon = id du popup en cours de modification
+
+        const titleInput = document.getElementById('p-title');
+        const textInput = document.getElementById('p-text');
+        const linkInput = document.getElementById('p-link');
+        const btnTextInput = document.getElementById('p-btnText');
+        const colorInput = document.getElementById('p-color');
+        const formTitle = document.getElementById('form-title');
+        const btnAdd = document.getElementById('btn-add');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
+
+        const resetForm = () => {
+            editingId = null;
+            titleInput.value = '';
+            textInput.value = '';
+            linkInput.value = '';
+            btnTextInput.value = '';
+            colorInput.value = '#ffd700';
+            formTitle.textContent = '➕ Ajouter un nouveau Popup';
+            btnAdd.textContent = 'Ajouter le Popup';
+            btnCancelEdit.style.display = 'none';
+        };
+
+        btnCancelEdit.addEventListener('click', resetForm);
+
+        // Ajouter OU modifier un popup selon le mode actuel
+        btnAdd.addEventListener('click', async () => {
+            const title = titleInput.value;
+            const text = textInput.value;
+            const link = linkInput.value;
+            const btnText = btnTextInput.value;
+            const color = colorInput.value;
 
             if(!title || !text || !link || !btnText) return alert("Remplis tous les champs boss !");
 
-            await addDoc(collection(db, "popups"), { title, text, link, btnText, color });
-            
-            // Vider les cases
-            document.getElementById('p-title').value = '';
-            document.getElementById('p-text').value = '';
-            document.getElementById('p-link').value = '';
-            document.getElementById('p-btnText').value = '';
+            if (editingId) {
+                await updateDoc(doc(db, "popups", editingId), { title, text, link, btnText, color });
+            } else {
+                await addDoc(collection(db, "popups"), { title, text, link, btnText, color });
+            }
+
+            resetForm();
         });
 
-        // Afficher et supprimer les popups
+        // Afficher, modifier et supprimer les popups
         onSnapshot(collection(db, "popups"), (snapshot) => {
             const list = document.getElementById('popups-list');
             list.innerHTML = '';
@@ -86,9 +114,34 @@
                         <strong>${data.title}</strong><br>
                         <small style="color:#aaa">${data.text}</small>
                     </div>
-                    <button class="btn-delete" data-id="${d.id}">Supprimer</button>
+                    <div class="popup-actions">
+                        <button class="btn-edit" data-id="${d.id}">Modifier</button>
+                        <button class="btn-delete" data-id="${d.id}">Supprimer</button>
+                    </div>
                 `;
                 list.appendChild(div);
+            });
+
+            // Action modifier : remplit le formulaire avec les données existantes
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const data = snapshot.docs.find(d => d.id === id)?.data();
+                    if (!data) return;
+
+                    editingId = id;
+                    titleInput.value = data.title || '';
+                    textInput.value = data.text || '';
+                    linkInput.value = data.link || '';
+                    btnTextInput.value = data.btnText || '';
+                    colorInput.value = data.color || '#ffd700';
+
+                    formTitle.textContent = '✏️ Modifier le Popup';
+                    btnAdd.textContent = 'Enregistrer les modifications';
+                    btnCancelEdit.style.display = 'block';
+
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
             });
 
             // Action supprimer
@@ -96,6 +149,7 @@
                 btn.addEventListener('click', async (e) => {
                     const id = e.target.getAttribute('data-id');
                     if(confirm("Tu veux vraiment supprimer ce popup ?")) {
+                        if (editingId === id) resetForm();
                         await deleteDoc(doc(db, "popups", id));
                     }
                 });
