@@ -317,7 +317,7 @@
     // Le paramètre boss_preview=1 permet à index.html de savoir qu'il s'agit
     // du boss en train de tester (pour ne pas le compter/afficher comme viewer).
     window.testMatch = (id) => {
-        const url = `index.html?id=${encodeURIComponent(id)}&boss_preview=1`;
+        const url = `/vip/?id=${encodeURIComponent(id)}&boss_preview=1`;
         window.open(url, '_blank');
     };
 
