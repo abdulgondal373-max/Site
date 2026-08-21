@@ -34,8 +34,6 @@
         .order-buttons { display: flex; flex-direction: column; gap: 4px; }
         .btn-order { background: #333; color: white; border: none; font-size: 0.6rem; cursor: pointer; border-radius: 3px; padding: 2px 6px; }
         .btn-order:hover { background: var(--accent); color: black; }
-        .btn-stop { background: #222; border: 1px solid #ff4444; color: #ff4444; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-stop:hover { background: #ff4444; color: #fff; }
 
         .match-info { flex: 1; min-width: 0; pointer-events: none; }
         .match-info h4 { margin: 0; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -263,7 +261,7 @@
                             <span>${m.sport} - ${m.competition}${dateText}</span>
                         </div>
                         <div class="actions">
-                            <button class="btn-stop" onclick="cutStream('${m.id}')" title="Couper le stream">🛑</button>
+                            <button class="btn-test" onclick="testMatch('${m.id}')" title="Tester en privé (invisible pour les viewers)">🎬</button>
                             <button class="btn-force ${isForced ? 'forced' : ''}" onclick="toggleForceLive('${m.id}', ${isForced})" title="Forcer / Libérer le direct">⚡</button>
                             <button class="btn-edit" onclick="startEdit('${m.id}')">MODIF</button>
                             <button class="btn-del" onclick="deleteMatch('${m.id}')">×</button>
@@ -315,11 +313,16 @@
         isDragging = false; // On retire la pause
     };
 
+    // Ouvre le lecteur dans un nouvel onglet pour tester le stream.
+    // Le paramètre boss_preview=1 permet à index.html de savoir qu'il s'agit
+    // du boss en train de tester (pour ne pas le compter/afficher comme viewer).
+    window.testMatch = (id) => {
+        const url = `index.html?id=${encodeURIComponent(id)}&boss_preview=1`;
+        window.open(url, '_blank');
+    };
+
     window.toggleForceLive = async (id, currentStatus) => { await updateDoc(doc(db, "streams", id), { forceLive: !currentStatus }); };
     window.deleteMatch = async (id) => { if(confirm("Supprimer ce match ?")) { await deleteDoc(doc(db, "streams", id)); } };
-    
-    // Fonction par défaut si tu n'as pas encore créé l'action cutStream de ton côté
-    window.cutStream = async (id) => { console.log("Coupure du stream : ", id); /* Ajoute ta logique Firebase ici si besoin */ };
 
     window.startEdit = async (id) => {
         const s = await getDoc(doc(db, "streams", id)); const d = s.data();
