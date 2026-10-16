@@ -83,24 +83,33 @@
 
         // Ajouter OU modifier un popup selon le mode actuel
         btnAdd.addEventListener('click', async () => {
-            const title = titleInput.value;
-            const text = textInput.value;
-            const link = linkInput.value;
-            const btnText = btnTextInput.value;
+            const title = titleInput.value.trim();
+            const text = textInput.value.trim();
+            const link = linkInput.value.trim();
+            const btnText = btnTextInput.value.trim();
             const color = colorInput.value;
 
             if(!title || !text || !link || !btnText) return alert("Remplis tous les champs boss !");
 
-            if (editingId) {
-                await updateDoc(doc(db, "popups", editingId), { title, text, link, btnText, color });
-            } else {
-                await addDoc(collection(db, "popups"), { title, text, link, btnText, color });
+            btnAdd.disabled = true;
+            try {
+                if (editingId) {
+                    await updateDoc(doc(db, "popups", editingId), { title, text, link, btnText, color });
+                } else {
+                    await addDoc(collection(db, "popups"), { title, text, link, btnText, color });
+                }
+                resetForm();
+            } catch (err) {
+                console.error(err);
+                alert("❌ Erreur Firebase : " + err.code + "\n" + err.message);
+            } finally {
+                btnAdd.disabled = false;
             }
-
-            resetForm();
         });
 
         // Afficher, modifier et supprimer les popups
+        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
         onSnapshot(collection(db, "popups"), (snapshot) => {
             const list = document.getElementById('popups-list');
             list.innerHTML = '';
@@ -111,8 +120,8 @@
                 div.style.borderLeftColor = data.color;
                 div.innerHTML = `
                     <div>
-                        <strong>${data.title}</strong><br>
-                        <small style="color:#aaa">${data.text}</small>
+                        <strong>${esc(data.title)}</strong><br>
+                        <small style="color:#aaa">${esc(data.text)}</small>
                     </div>
                     <div class="popup-actions">
                         <button class="btn-edit" data-id="${d.id}">Modifier</button>
@@ -125,7 +134,7 @@
             // Action modifier : remplit le formulaire avec les données existantes
             document.querySelectorAll('.btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const id = e.target.getAttribute('data-id');
+                    const id = e.currentTarget.getAttribute('data-id');
                     const data = snapshot.docs.find(d => d.id === id)?.data();
                     if (!data) return;
 
@@ -147,13 +156,17 @@
             // Action supprimer
             document.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
-                    const id = e.target.getAttribute('data-id');
+                    const id = e.currentTarget.getAttribute('data-id');
                     if(confirm("Tu veux vraiment supprimer ce popup ?")) {
                         if (editingId === id) resetForm();
-                        await deleteDoc(doc(db, "popups", id));
+                        try { await deleteDoc(doc(db, "popups", id)); }
+                        catch (err) { console.error(err); alert("❌ Erreur Firebase : " + err.code + "\n" + err.message); }
                     }
                 });
             });
+        }, (err) => {
+            console.error(err);
+            document.getElementById('popups-list').textContent = "❌ Lecture impossible : " + err.code + " - " + err.message;
         });
     </script>
 </body>
