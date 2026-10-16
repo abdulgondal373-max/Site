@@ -18,12 +18,25 @@
         .popup-actions { display: flex; gap: 0; flex-shrink: 0; }
         .color-picker { display: flex; align-items: center; gap: 10px; }
         input[type="color"] { width: 50px; height: 50px; padding: 0; cursor: pointer; }
+        #login-card, #admin-area { display: none; }
+        .user-bar { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:13px; color:#aaa; }
+        .user-bar button { width:auto; margin:0; padding:6px 12px; background:#555; color:white; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>⚙️ GESTION DES POPUPS</h1>
-        
+
+        <div class="card" id="login-card">
+            <h3>🔐 Connexion admin</h3>
+            <input type="email" id="l-email" placeholder="Email" autocomplete="username">
+            <input type="password" id="l-pass" placeholder="Mot de passe" autocomplete="current-password">
+            <button id="btn-login">Se connecter</button>
+        </div>
+
+        <div id="admin-area">
+        <div class="card user-bar"><span id="user-info"></span><button id="btn-logout">Déconnexion</button></div>
+
         <div class="card">
             <h3 id="form-title">➕ Ajouter un nouveau Popup</h3>
             <input type="text" id="p-title" placeholder="Titre (ex: 💎 ACCÈS VIP PREMIUM)">
@@ -42,11 +55,16 @@
             <h3>📋 Popups Actifs (Tirés au sort sur le site)</h3>
             <div id="popups-list">Chargement...</div>
         </div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        const ADMIN_UID = 'Ye98Rv5IOmepAS9SYmrn1vRNZiW2';
 
         const firebaseConfig = { 
             apiKey: "AIzaSyCznQgA4zvs1dhZQzqtPqjfabsbBhEmvhU", 
@@ -55,6 +73,35 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const loginCard = document.getElementById('login-card');
+        const adminArea = document.getElementById('admin-area');
+
+        document.getElementById('btn-login').addEventListener('click', async () => {
+            const email = document.getElementById('l-email').value.trim();
+            const pass = document.getElementById('l-pass').value;
+            if (!email || !pass) return alert("Email et mot de passe requis");
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (err) {
+                console.error(err);
+                alert("❌ Connexion impossible : " + err.code);
+            }
+        });
+        document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.uid === ADMIN_UID) {
+                loginCard.style.display = 'none';
+                adminArea.style.display = 'block';
+                document.getElementById('user-info').textContent = '✅ Connecté : ' + (user.email || user.uid);
+            } else {
+                adminArea.style.display = 'none';
+                loginCard.style.display = 'block';
+                if (user) { alert("Ce compte n'est pas l'admin autorisé."); signOut(auth); }
+            }
+        });
 
         let editingId = null; // null = mode "ajout", sinon = id du popup en cours de modification
 
